@@ -1,0 +1,46 @@
+{
+  "name": "capsule-news-quiz",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Quiz d'actualités interactif pour la Capsule_coop - Vrai ou Faux ?",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview",
+    "start": "npm run dev"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.66",
+    "@types/react-dom": "^18.2.22",
+    "@vitejs/plugin-react": "^4.2.1",
+    "eslint": "^8.57.0",
+    "eslint-plugin-react": "^7.34.1",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.6",
+    "vite": "^5.2.0"
+  },
+  "keywords": [
+    "quiz",
+    "news",
+    "actualités",
+    "gaming",
+    "streaming",
+    "capsule-coop",
+    "react",
+    "vite",
+    "api"
+  ],
+  "author": "Capsule_coop",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/capsule-coop/news-quiz"
+  },
+  "homepage": "https://capsule-coop.github.io/news-quiz"
+}
