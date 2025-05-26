@@ -1,13 +1,15 @@
-// Configuration des APIs
+// Configuration des APIs (UNIQUEMENT GRATUITES)
 const CONFIG = {
   NEWS_API_KEY: import.meta.env.VITE_NEWS_API_KEY || 'YOUR_NEWS_API_KEY',
-  GOOGLE_FACT_CHECK_API_KEY: import.meta.env.VITE_GOOGLE_API_KEY || 'YOUR_GOOGLE_API_KEY',
-  API_NINJAS_KEY: import.meta.env.VITE_API_NINJAS_KEY || 'YOUR_API_NINJAS_KEY',
 
+  // URLs des APIs gratuites (aucune clé requise)
   NEWS_API_URL: 'https://newsapi.org/v2',
-  GOOGLE_FACT_CHECK_URL: 'https://factchecktools.googleapis.com/v1alpha1',
   USELESS_FACTS_URL: 'https://uselessfacts.jsph.pl/api/v2',
-  API_NINJAS_URL: 'https://api.api-ninjas.com/v1',
+  CAT_FACTS_URL: 'https://catfact.ninja',
+  NUMBERS_API_URL: 'http://numbersapi.com',
+  COUNTRIES_API_URL: 'https://restcountries.com/v3.1',
+  JOKE_API_URL: 'https://v2.jokeapi.dev',
+  HISTORY_API_URL: 'https://history.muffinlabs.com',
 
   COUNTRY: 'fr',
   NEWS_CATEGORIES: ['general', 'technology', 'science', 'health', 'business'],
@@ -21,8 +23,6 @@ const CONFIG = {
 class APIManager {
   constructor() {
     this.newsApiKey = CONFIG.NEWS_API_KEY;
-    this.googleApiKey = CONFIG.GOOGLE_FACT_CHECK_API_KEY;
-    this.apiNinjasKey = CONFIG.API_NINJAS_KEY;
 
     // Cache simple pour éviter les appels répétés
     this.cache = new Map();
@@ -30,9 +30,12 @@ class APIManager {
     // Statistiques d'utilisation
     this.stats = {
       newsAPI: { calls: 0, errors: 0, lastCall: null },
-      factCheckAPI: { calls: 0, errors: 0, lastCall: null },
-      uselessFactsAPI: { calls: 0, errors: 0, lastCall: null },
-      apiNinjas: { calls: 0, errors: 0, lastCall: null }
+      uselessFacts: { calls: 0, errors: 0, lastCall: null },
+      catFacts: { calls: 0, errors: 0, lastCall: null },
+      numbersAPI: { calls: 0, errors: 0, lastCall: null },
+      countriesAPI: { calls: 0, errors: 0, lastCall: null },
+      jokeAPI: { calls: 0, errors: 0, lastCall: null },
+      historyAPI: { calls: 0, errors: 0, lastCall: null }
     };
   }
 
@@ -69,7 +72,7 @@ class APIManager {
 
   // Gestion du cache
   getCacheKey(prefix, params) {
-    return `${prefix}_${JSON.stringify(params)}_${Date.now()}`;
+    return `${prefix}_${JSON.stringify(params)}`;
   }
 
   getCachedData(key) {
@@ -88,19 +91,20 @@ class APIManager {
     });
   }
 
-  // Récupérer des actualités depuis News API
-  async fetchNewsAPI(category = 'general', pageSize = 10) {
+  // 📰 News API (optionnelle, avec clé)
+  async fetchNewsAPI(category = 'general', pageSize = 5) {
     const cacheKey = this.getCacheKey('news', { category, pageSize });
     const cached = this.getCachedData(cacheKey);
 
     if (cached) {
-      console.log('📦 Actualités récupérées depuis le cache');
+      console.log('📦 Actualités News API depuis le cache');
       return cached;
     }
 
     try {
-      if (this.newsApiKey === 'VITE_NEWS_API_KEY') {
-        throw new Error('News API key not configured');
+      if (this.newsApiKey === 'YOUR_NEWS_API_KEY') {
+        console.log('⚠️ News API key non configurée');
+        return [];
       }
 
       this.stats.newsAPI.calls++;
@@ -122,7 +126,6 @@ class APIManager {
           category: category.charAt(0).toUpperCase() + category.slice(1),
           author: article.author,
           sourceName: article.source?.name,
-          imageUrl: article.urlToImage,
           isReal: true,
           verified: true
         }));
@@ -140,241 +143,268 @@ class APIManager {
     }
   }
 
-  // Rechercher des actualités par mot-clé
-  async searchNews(query, pageSize = 5) {
-    const cacheKey = this.getCacheKey('search', { query, pageSize });
-    const cached = this.getCachedData(cacheKey);
-
-    if (cached) {
-      return cached;
-    }
-
+  // 🎲 Useless Facts API (100% gratuite)
+  async getUselessFact() {
     try {
-      if (this.newsApiKey === 'YOUR_NEWS_API_KEY') {
-        throw new Error('News API key not configured');
-      }
-
-      this.stats.newsAPI.calls++;
-
-      const url = `${CONFIG.NEWS_API_URL}/everything?q=${encodeURIComponent(query)}&language=fr&pageSize=${pageSize}&sortBy=publishedAt&apiKey=${this.newsApiKey}`;
-
-      const response = await this.fetchWithRetry(url);
-      const data = await response.json();
-
-      if (data.status === 'ok') {
-        const results = data.articles
-        .filter(article => article.title && article.description)
-        .map(article => ({
-          title: article.title,
-          content: this.truncateText(article.description, 200),
-          source: article.url,
-          publishedAt: article.publishedAt,
-          category: 'Recherche',
-          sourceName: article.source?.name,
-          isReal: true,
-          verified: true
-        }));
-
-        this.setCachedData(cacheKey, results);
-        return results;
-      }
-      return [];
-    } catch (error) {
-      this.stats.newsAPI.errors++;
-      console.error('❌ Search News API Error:', error.message);
-      return [];
-    }
-  }
-
-  // Vérifier une information avec Google Fact Check
-  async checkFactWithGoogle(query) {
-    const cacheKey = this.getCacheKey('factcheck', { query });
-    const cached = this.getCachedData(cacheKey);
-
-    if (cached) {
-      return cached;
-    }
-
-    try {
-      if (this.googleApiKey === 'YOUR_GOOGLE_API_KEY') {
-        throw new Error('Google API key not configured');
-      }
-
-      this.stats.factCheckAPI.calls++;
-      this.stats.factCheckAPI.lastCall = new Date();
-
-      const url = `${CONFIG.GOOGLE_FACT_CHECK_URL}/claims:search?query=${encodeURIComponent(query)}&languageCode=fr&key=${this.googleApiKey}`;
-
-      const response = await this.fetchWithRetry(url);
-      const data = await response.json();
-
-      if (data.claims && data.claims.length > 0) {
-        const result = {
-          isFactChecked: true,
-          claims: data.claims.map(claim => ({
-            text: claim.text,
-            claimant: claim.claimant,
-            claimDate: claim.claimDate,
-            claimReview: claim.claimReview ? claim.claimReview.map(review => ({
-              publisher: review.publisher?.name,
-              url: review.url,
-              title: review.title,
-              reviewDate: review.reviewDate,
-              textualRating: review.textualRating,
-              languageCode: review.languageCode
-            })) : []
-          }))
-        };
-
-        this.setCachedData(cacheKey, result);
-        return result;
-      }
-
-      const noResultsResponse = {
-        isFactChecked: false,
-        claims: []
-      };
-
-      this.setCachedData(cacheKey, noResultsResponse);
-      return noResultsResponse;
-    } catch (error) {
-      this.stats.factCheckAPI.errors++;
-      console.error('❌ Google Fact Check Error:', error.message);
-      return {
-        isFactChecked: false,
-        claims: [],
-        error: error.message
-      };
-    }
-  }
-
-  // Récupérer un fait aléatoire depuis Useless Facts API
-  async getRandomFact() {
-    try {
-      this.stats.uselessFactsAPI.calls++;
-      this.stats.uselessFactsAPI.lastCall = new Date();
+      this.stats.uselessFacts.calls++;
+      this.stats.uselessFacts.lastCall = new Date();
 
       const response = await this.fetchWithRetry(`${CONFIG.USELESS_FACTS_URL}/facts/random?language=en`);
       const data = await response.json();
 
       const fact = {
-        title: "Fait insolite du jour",
+        title: "Fait insolite authentique",
         content: data.text,
-        source: data.source_url || "https://uselessfacts.jsph.pl",
+        source: "https://uselessfacts.jsph.pl",
         category: "Insolite",
         publishedAt: new Date().toISOString(),
-        isReal: true
+        isReal: true,
+        verified: true
       };
 
       console.log('✅ Fait insolite récupéré');
       return fact;
     } catch (error) {
-      this.stats.uselessFactsAPI.errors++;
-      console.error('❌ Useless Facts API Error:', error.message);
+      this.stats.uselessFacts.errors++;
+      console.error('❌ Useless Facts Error:', error.message);
       return null;
     }
   }
 
-  // Récupérer des faits depuis API Ninjas
-  async getFactsFromNinjas(limit = 1) {
-    const cacheKey = this.getCacheKey('ninjas', { limit });
-    const cached = this.getCachedData(cacheKey);
-
-    if (cached) {
-      return cached;
-    }
-
+  // 🐱 Cat Facts API (100% gratuite)
+  async getCatFact() {
     try {
-      if (this.apiNinjasKey === 'YOUR_API_NINJAS_KEY') {
-        throw new Error('API Ninjas key not configured');
-      }
+      this.stats.catFacts.calls++;
+      this.stats.catFacts.lastCall = new Date();
 
-      this.stats.apiNinjas.calls++;
-      this.stats.apiNinjas.lastCall = new Date();
-
-      const response = await this.fetchWithRetry(`${CONFIG.API_NINJAS_URL}/facts?limit=${limit}`, {
-        headers: {
-          'X-Api-Key': this.apiNinjasKey
-        }
-      });
-
+      const response = await this.fetchWithRetry(`${CONFIG.CAT_FACTS_URL}/fact`);
       const data = await response.json();
 
-      const facts = data.map(fact => ({
-        title: "Fait scientifique",
-        content: fact.fact,
-        source: "https://api.api-ninjas.com",
-        category: "Science",
+      const fact = {
+        title: "Fait authentique sur les chats",
+        content: data.fact,
+        source: "https://catfact.ninja",
+        category: "Animaux",
         publishedAt: new Date().toISOString(),
-        isReal: true
-      }));
+        isReal: true,
+        verified: true
+      };
 
-      this.setCachedData(cacheKey, facts);
-      console.log(`✅ ${facts.length} faits scientifiques récupérés`);
-      return facts;
+      console.log('✅ Fait sur les chats récupéré');
+      return fact;
     } catch (error) {
-      this.stats.apiNinjas.errors++;
-      console.error('❌ API Ninjas Error:', error.message);
-      return [];
+      this.stats.catFacts.errors++;
+      console.error('❌ Cat Facts Error:', error.message);
+      return null;
     }
   }
 
-  // Méthode pour tester toutes les APIs
+  // 🔢 Numbers API (100% gratuite)
+  async getNumberFact() {
+    try {
+      this.stats.numbersAPI.calls++;
+      this.stats.numbersAPI.lastCall = new Date();
+
+      const randomNum = Math.floor(Math.random() * 1000);
+      const response = await this.fetchWithRetry(`${CONFIG.NUMBERS_API_URL}/${randomNum}?json`);
+      const data = await response.json();
+
+      const fact = {
+        title: `Fait mathématique sur le nombre ${randomNum}`,
+        content: data.text,
+        source: "http://numbersapi.com",
+        category: "Mathématiques",
+        publishedAt: new Date().toISOString(),
+        isReal: true,
+        verified: true
+      };
+
+      console.log('✅ Fait mathématique récupéré');
+      return fact;
+    } catch (error) {
+      this.stats.numbersAPI.errors++;
+      console.error('❌ Numbers API Error:', error.message);
+      return null;
+    }
+  }
+
+  // 🌍 REST Countries API (100% gratuite)
+  async getCountryFact() {
+    try {
+      this.stats.countriesAPI.calls++;
+      this.stats.countriesAPI.lastCall = new Date();
+
+      const countries = ['france', 'japan', 'brazil', 'canada', 'australia', 'norway', 'chile', 'italy', 'spain', 'germany'];
+      const randomCountry = countries[Math.floor(Math.random() * countries.length)];
+
+      const response = await this.fetchWithRetry(`${CONFIG.COUNTRIES_API_URL}/name/${randomCountry}?fields=name,capital,population,area,languages`);
+      const data = await response.json();
+      const country = data[0];
+
+      const fact = {
+        title: `Informations sur ${country.name.common}`,
+        content: `Capitale : ${country.capital?.[0] || 'Non spécifiée'}. Population : ${(country.population || 0).toLocaleString('fr-FR')} habitants. Superficie : ${(country.area || 0).toLocaleString('fr-FR')} km².`,
+        source: "https://restcountries.com",
+        category: "Géographie",
+        publishedAt: new Date().toISOString(),
+        isReal: true,
+        verified: true
+      };
+
+      console.log('✅ Fait géographique récupéré');
+      return fact;
+    } catch (error) {
+      this.stats.countriesAPI.errors++;
+      console.error('❌ Countries API Error:', error.message);
+      return null;
+    }
+  }
+
+  // 🎭 Joke API (100% gratuite)
+  async getJoke() {
+    try {
+      this.stats.jokeAPI.calls++;
+      this.stats.jokeAPI.lastCall = new Date();
+
+      const response = await this.fetchWithRetry(`${CONFIG.JOKE_API_URL}/joke/Any?blacklistFlags=nsfw,religious,political,racist,sexist,explicit&type=single`);
+      const data = await response.json();
+
+      const joke = {
+        title: "Blague du jour",
+        content: data.joke,
+        source: "https://jokeapi.dev",
+        category: "Humour",
+        publishedAt: new Date().toISOString(),
+        isReal: true,
+        verified: true
+      };
+
+      console.log('✅ Blague récupérée');
+      return joke;
+    } catch (error) {
+      this.stats.jokeAPI.errors++;
+      console.error('❌ Joke API Error:', error.message);
+      return null;
+    }
+  }
+
+  // 🏛️ History API (100% gratuite)
+  async getHistoryFact() {
+    try {
+      this.stats.historyAPI.calls++;
+      this.stats.historyAPI.lastCall = new Date();
+
+      const today = new Date();
+      const month = today.getMonth() + 1;
+      const day = today.getDate();
+
+      const response = await this.fetchWithRetry(`${CONFIG.HISTORY_API_URL}/date/${month}/${day}`);
+      const data = await response.json();
+
+      if (data.data && data.data.Events && data.data.Events.length > 0) {
+        const randomEvent = data.data.Events[Math.floor(Math.random() * Math.min(5, data.data.Events.length))];
+
+        const fact = {
+          title: `Il s'est passé un ${day}/${month} en ${randomEvent.year}`,
+          content: randomEvent.text,
+          source: "https://history.muffinlabs.com",
+          category: "Histoire",
+          publishedAt: new Date().toISOString(),
+          isReal: true,
+          verified: true
+        };
+
+        console.log('✅ Fait historique récupéré');
+        return fact;
+      }
+
+      throw new Error('Aucun événement trouvé');
+    } catch (error) {
+      this.stats.historyAPI.errors++;
+      console.error('❌ History API Error:', error.message);
+      return null;
+    }
+  }
+
+  // 🧪 Test de toutes les APIs
   async testAPIs() {
-    console.log('🧪 Test complet des APIs...');
+    console.log('🧪 Test de toutes les APIs...');
 
     const results = {
       newsAPI: false,
-      factCheckAPI: false,
-      uselessFactsAPI: false,
-      apiNinjas: false
+      uselessFacts: false,
+      catFacts: false,
+      numbersAPI: false,
+      countriesAPI: false,
+      jokeAPI: false,
+      historyAPI: false
     };
 
-    // Test News API
+    // Test News API (optionnelle)
     try {
-      console.log('📰 Test News API...');
-      const news = await this.fetchNewsAPI('technology', 1);
-      results.newsAPI = news.length > 0;
-      console.log('News API:', results.newsAPI ? '✅ OK' : '❌ Erreur');
+      if (this.newsApiKey !== 'YOUR_NEWS_API_KEY') {
+        const news = await this.fetchNewsAPI('technology', 1);
+        results.newsAPI = news.length > 0;
+      }
+      console.log('News API:', results.newsAPI ? '✅ OK' : '⚠️ Non configurée');
     } catch (error) {
       console.log('News API: ❌ Erreur -', error.message);
     }
 
-    // Test Google Fact Check
+    // Test APIs gratuites
     try {
-      console.log('🔍 Test Google Fact Check...');
-      const factCheck = await this.checkFactWithGoogle('covid vaccin');
-      results.factCheckAPI = factCheck.isFactChecked;
-      console.log('Fact Check API:', results.factCheckAPI ? '✅ OK' : '❌ Aucun résultat');
+      const fact = await this.getUselessFact();
+      results.uselessFacts = !!fact;
+      console.log('Useless Facts:', results.uselessFacts ? '✅ OK' : '❌ Erreur');
     } catch (error) {
-      console.log('Fact Check API: ❌ Erreur -', error.message);
+      console.log('Useless Facts: ❌ Erreur');
     }
 
-    // Test Useless Facts
     try {
-      console.log('🎲 Test Useless Facts...');
-      const randomFact = await this.getRandomFact();
-      results.uselessFactsAPI = !!randomFact;
-      console.log('Useless Facts API:', results.uselessFactsAPI ? '✅ OK' : '❌ Erreur');
+      const catFact = await this.getCatFact();
+      results.catFacts = !!catFact;
+      console.log('Cat Facts:', results.catFacts ? '✅ OK' : '❌ Erreur');
     } catch (error) {
-      console.log('Useless Facts API: ❌ Erreur -', error.message);
+      console.log('Cat Facts: ❌ Erreur');
     }
 
-    // Test API Ninjas
     try {
-      console.log('🥷 Test API Ninjas...');
-      const facts = await this.getFactsFromNinjas(1);
-      results.apiNinjas = facts.length > 0;
-      console.log('API Ninjas:', results.apiNinjas ? '✅ OK' : '❌ Erreur');
+      const numberFact = await this.getNumberFact();
+      results.numbersAPI = !!numberFact;
+      console.log('Numbers API:', results.numbersAPI ? '✅ OK' : '❌ Erreur');
     } catch (error) {
-      console.log('API Ninjas: ❌ Erreur -', error.message);
+      console.log('Numbers API: ❌ Erreur');
+    }
+
+    try {
+      const countryFact = await this.getCountryFact();
+      results.countriesAPI = !!countryFact;
+      console.log('Countries API:', results.countriesAPI ? '✅ OK' : '❌ Erreur');
+    } catch (error) {
+      console.log('Countries API: ❌ Erreur');
+    }
+
+    try {
+      const joke = await this.getJoke();
+      results.jokeAPI = !!joke;
+      console.log('Joke API:', results.jokeAPI ? '✅ OK' : '❌ Erreur');
+    } catch (error) {
+      console.log('Joke API: ❌ Erreur');
+    }
+
+    try {
+      const historyFact = await this.getHistoryFact();
+      results.historyAPI = !!historyFact;
+      console.log('History API:', results.historyAPI ? '✅ OK' : '❌ Erreur');
+    } catch (error) {
+      console.log('History API: ❌ Erreur');
     }
 
     console.log('📊 Résumé des tests:', results);
     return results;
   }
 
-  // Méthode pour obtenir un mélange d'actualités
+  // 🌟 Méthode principale : mélange de toutes les actualités
   async getMixedNews() {
     const results = [];
 
@@ -384,133 +414,53 @@ class APIManager {
       // Récupérer des actualités récentes (si API disponible)
       if (this.newsApiKey !== 'YOUR_NEWS_API_KEY') {
         try {
-          const recentNews = await this.fetchNewsAPI('general', 3);
+          const recentNews = await this.fetchNewsAPI('general', 2);
           results.push(...recentNews);
 
-          const techNews = await this.fetchNewsAPI('technology', 2);
+          const techNews = await this.fetchNewsAPI('technology', 1);
           results.push(...techNews);
-
-          console.log(`📰 ${recentNews.length + techNews.length} actualités News API ajoutées`);
         } catch (error) {
           console.warn('⚠️ News API non disponible:', error.message);
         }
       }
 
-      // Récupérer des faits insolites
-      try {
-        const randomFact = await this.getRandomFact();
-        if (randomFact) {
-          results.push(randomFact);
-          console.log('🎲 1 fait insolite ajouté');
-        }
-      } catch (error) {
-        console.warn('⚠️ Useless Facts API non disponible:', error.message);
-      }
+      // Récupérer des contenus depuis les APIs gratuites
+      const freeAPIs = [
+        () => this.getUselessFact(),
+        () => this.getCatFact(),
+        () => this.getNumberFact(),
+        () => this.getCountryFact(),
+        () => this.getJoke(),
+        () => this.getHistoryFact()
+      ];
 
-      // Récupérer des faits scientifiques
-      if (this.apiNinjasKey !== 'YOUR_API_NINJAS_KEY') {
-        try {
-          const scienceFacts = await this.getFactsFromNinjas(2);
-          results.push(...scienceFacts);
-          console.log(`🔬 ${scienceFacts.length} faits scientifiques ajoutés`);
-        } catch (error) {
-          console.warn('⚠️ API Ninjas non disponible:', error.message);
-        }
-      }
+      // Exécuter 3-4 APIs gratuites en parallèle
+      const promises = freeAPIs.slice(0, 4).map(api => api().catch(err => null));
+      const freeResults = await Promise.all(promises);
+
+      // Filtrer les résultats valides
+      const validFreeResults = freeResults.filter(result => result !== null);
+      results.push(...validFreeResults);
 
     } catch (error) {
       console.error('❌ Erreur lors du mélange des actualités:', error);
     }
 
-    console.log(`📊 Total: ${results.length} actualités récupérées via APIs`);
+    console.log(`📊 Total: ${results.length} actualités récupérées`);
     return results;
-  }
-
-  // Méthode pour valider une actualité
-  async validateNews(newsItem) {
-    try {
-      if (this.googleApiKey === 'YOUR_GOOGLE_API_KEY') {
-        return {
-          isValidated: false,
-          message: "Google API key not configured"
-        };
-      }
-
-      console.log(`🔍 Validation de: "${newsItem.title.substring(0, 50)}..."`);
-
-      // Vérifier avec Google Fact Check
-      const factCheck = await this.checkFactWithGoogle(newsItem.title);
-
-      if (factCheck.isFactChecked && factCheck.claims.length > 0) {
-        const claim = factCheck.claims[0];
-        const reviews = claim.claimReview;
-
-        if (reviews && reviews.length > 0) {
-          const review = reviews[0];
-          return {
-            isValidated: true,
-            rating: review.textualRating,
-            source: review.url,
-            publisher: review.publisher,
-            reviewDate: review.reviewDate,
-            claim: claim.text
-          };
-        }
-      }
-
-      return {
-        isValidated: false,
-        message: "Aucune vérification trouvée dans la base de données"
-      };
-    } catch (error) {
-      console.error('❌ Erreur lors de la validation:', error);
-      return {
-        isValidated: false,
-        error: error.message
-      };
-    }
-  }
-
-  // Méthode pour récupérer des actualités par catégorie
-  async getNewsByCategory(category) {
-    try {
-      console.log(`📂 Récupération actualités catégorie: ${category}`);
-      return await this.fetchNewsAPI(category, 5);
-    } catch (error) {
-      console.error(`❌ Erreur catégorie ${category}:`, error);
-      return [];
-    }
-  }
-
-  // Méthode pour vérifier la connectivité des APIs
-  async checkAPIHealth() {
-    const health = {
-      newsAPI: { status: 'checking', lastCheck: new Date(), responseTime: null },
-      factCheckAPI: { status: 'checking', lastCheck: new Date(), responseTime: null },
-      uselessFactsAPI: { status: 'checking', lastCheck: new Date(), responseTime: null },
-      apiNinjas: { status: 'checking', lastCheck: new Date(), responseTime: null }
-    };
-
-    console.log('🩺 Vérification de la santé des APIs...');
-
-    // Test rapide de chaque API avec mesure du temps de réponse
-    const testResults = await this.testAPIs();
-
-    health.newsAPI.status = testResults.newsAPI ? 'online' : 'offline';
-    health.factCheckAPI.status = testResults.factCheckAPI ? 'online' : 'offline';
-    health.uselessFactsAPI.status = testResults.uselessFactsAPI ? 'online' : 'offline';
-    health.apiNinjas.status = testResults.apiNinjas ? 'online' : 'offline';
-
-    return health;
   }
 
   // Obtenir les statistiques d'utilisation
   getStats() {
+    const totalCalls = Object.values(this.stats).reduce((sum, api) => sum + api.calls, 0);
+    const totalErrors = Object.values(this.stats).reduce((sum, api) => sum + api.errors, 0);
+
     return {
       ...this.stats,
       cacheSize: this.cache.size,
-      totalCalls: Object.values(this.stats).reduce((sum, api) => sum + api.calls, 0),
-      totalErrors: Object.values(this.stats).reduce((sum, api) => sum + api.errors, 0)
+      totalCalls,
+      totalErrors,
+      successRate: totalCalls > 0 ? ((totalCalls - totalErrors) / totalCalls * 100).toFixed(1) + '%' : '100%'
     };
   }
 
@@ -527,48 +477,14 @@ class APIManager {
     return text.substring(0, maxLength).trim() + '...';
   }
 
-  // Méthode pour obtenir des actualités de sources françaises spécifiques
-  async getFrenchNews() {
-    try {
-      if (this.newsApiKey === 'YOUR_NEWS_API_KEY') {
-        throw new Error('News API key not configured');
-      }
-
-      const sources = 'le-monde,les-echos,liberation,le-figaro';
-      const url = `${CONFIG.NEWS_API_URL}/top-headlines?sources=${sources}&apiKey=${this.newsApiKey}`;
-
-      const response = await this.fetchWithRetry(url);
-      const data = await response.json();
-
-      if (data.status === 'ok') {
-        return data.articles.map(article => ({
-          title: article.title,
-          content: this.truncateText(article.description, 200),
-          source: article.url,
-          publishedAt: article.publishedAt,
-          category: 'France',
-          sourceName: article.source.name,
-          isReal: true,
-          verified: true
-        }));
-      }
-
-      return [];
-    } catch (error) {
-      console.error('❌ Erreur actualités françaises:', error);
-      return [];
-    }
-  }
-
   // Méthode de debug pour afficher l'état de l'API Manager
   debug() {
     console.group('🔧 Debug API Manager');
     console.log('📊 Statistiques:', this.getStats());
     console.log('🔑 Clés configurées:', {
-      newsAPI: this.newsApiKey !== 'YOUR_NEWS_API_KEY',
-      googleAPI: this.googleApiKey !== 'YOUR_GOOGLE_API_KEY',
-      apiNinjas: this.apiNinjasKey !== 'YOUR_API_NINJAS_KEY'
+      newsAPI: this.newsApiKey !== 'YOUR_NEWS_API_KEY'
     });
+    console.log('🆓 APIs gratuites:', 'Toutes disponibles sans clé');
     console.log('💾 Cache:', `${this.cache.size} entrées`);
     console.groupEnd();
   }

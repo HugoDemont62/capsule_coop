@@ -48,11 +48,12 @@ function App() {
 
           {/* Indicateur de statut des APIs */}
           <div className="api-status">
-            <span className={`status-dot ${apiStatus.newsAPI ? 'online' : 'offline'}`}></span>
-            <span className={`status-dot ${apiStatus.factCheckAPI ? 'online' : 'offline'}`}></span>
-            <span className={`status-dot ${apiStatus.uselessFactsAPI ? 'online' : 'offline'}`}></span>
-            <span className={`status-dot ${apiStatus.apiNinjas ? 'online' : 'offline'}`}></span>
-            <small>Système connecté</small>
+            <span className={`status-dot ${apiStatus.uselessFacts ? 'online' : 'offline'}`}></span>
+            <span className={`status-dot ${apiStatus.catFacts ? 'online' : 'offline'}`}></span>
+            <span className={`status-dot ${apiStatus.numbersAPI ? 'online' : 'offline'}`}></span>
+            <span className={`status-dot ${apiStatus.countriesAPI ? 'online' : 'offline'}`}></span>
+            <span className={`status-dot ${apiStatus.jokeAPI ? 'online' : 'offline'}`}></span>
+            <small>APIs Gratuites</small>
           </div>
         </header>
 

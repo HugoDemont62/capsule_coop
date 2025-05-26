@@ -24,7 +24,7 @@ const NewsGame = ({ apiStatus }) => {
       let newsData = [];
 
       // Essayer de récupérer des actualités via les APIs
-      if (apiStatus.newsAPI || apiStatus.uselessFactsAPI) {
+      if (Object.values(apiStatus).some(status => status)) {
         try {
           newsData = await apiManager.getMixedNews();
           console.log(`✅ ${newsData.length} actualités récupérées via APIs`);
@@ -136,19 +136,12 @@ const NewsGame = ({ apiStatus }) => {
       setIncorrectScore(prev => prev + 1);
     }
 
-    // Optionnel : Vérifier avec Google Fact Check pour les vraies news
-    let factCheckResult = null;
-    if (currentQuestion.isReal && apiStatus.factCheckAPI) {
-      try {
-        factCheckResult = await apiManager.validateNews(currentQuestion);
-      } catch (error) {
-        console.log('ℹ️ Fact check non disponible');
-      }
-    }
+    // Optionnel : Plus de validation nécessaire maintenant que Google est supprimé
+    let validationResult = null;
 
     setGameResult({
       isCorrect,
-      factCheck: factCheckResult
+      validation: validationResult
     });
   };
 
@@ -239,9 +232,9 @@ const NewsGame = ({ apiStatus }) => {
                         🔗 Explorer la source
                       </a>
                     )}
-                    {gameResult.factCheck?.isValidated && (
+                    {gameResult.validation?.isValidated && (
                       <div style={{ marginTop: '15px', fontSize: '0.9rem', color: '#4ade80' }}>
-                        ✅ Vérification : {gameResult.factCheck.rating}
+                        ✅ Validation : {gameResult.validation.rating}
                       </div>
                     )}
                   </>
