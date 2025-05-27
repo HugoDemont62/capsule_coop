@@ -1,20 +1,14 @@
-const CONFIG = {
-  NEWS_API_KEY: import.meta.env.VITE_NEWS_API_KEY || 'YOUR_NEWS_API_KEY',
+// src/services/apiManager.js - VERSION SANS NEWS API
 
-  NEWS_API_URL: 'https://newsapi.org/v2',
+// Configuration des APIs (UNIQUEMENT GRATUITES + HTTPS)
+const CONFIG = {
+  NEWS_API_KEY: import.meta.env.VITE_NEWS_API_KEY || null, // ← Changé ici
+
+  // URLs des APIs gratuites - TOUTES EN HTTPS
   USELESS_FACTS_URL: 'https://uselessfacts.jsph.pl/api/v2',
   CAT_FACTS_URL: 'https://catfact.ninja',
-
-  // 🔧 NUMBERS API - Version HTTPS alternative
-  NUMBERS_API_URL: 'https://numbersapi.p.rapidapi.com', // Alternative HTTPS
-  NUMBERS_API_FALLBACK: 'https://api.api-ninjas.com/v1/facts', // Fallback
-
   COUNTRIES_API_URL: 'https://restcountries.com/v3.1',
   JOKE_API_URL: 'https://v2.jokeapi.dev',
-
-  // 🔧 HISTORY API - Alternatives HTTPS
-  HISTORY_API_URL: 'https://api.wikimedia.org/feed/v1/wikipedia/en/onthisday', // Alternative
-  HISTORY_API_FALLBACK: 'https://api.api-ninjas.com/v1/historicalevents', // Fallback
 
   COUNTRY: 'fr',
   NEWS_CATEGORIES: ['general', 'technology', 'science', 'health', 'business'],
@@ -63,7 +57,7 @@ class APIManager {
 
       if (retries > 0 && !error.name === 'AbortError') {
         console.warn(`Retry ${CONFIG.MAX_RETRIES - retries + 1}/${CONFIG.MAX_RETRIES} for ${url}`);
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Attendre 1s
+        await new Promise(resolve => setTimeout(resolve, 1000));
         return this.fetchWithRetry(url, options, retries - 1);
       }
 
@@ -92,44 +86,47 @@ class APIManager {
     });
   }
 
-  // 📰 News API (optionnelle, avec clé)
+  // 📰 News API - DÉSACTIVÉE PAR DÉFAUT
   async fetchNewsAPI(category = 'general', pageSize = 5) {
-    const cacheKey = this.getCacheKey('news', { category, pageSize });
-    const cached = this.getCachedData(cacheKey);
-
-    if (cached) {
-      console.log('📦 Actualités News API depuis le cache');
-      return cached;
-    }
-
     try {
-      if (this.newsApiKey === 'YOUR_NEWS_API_KEY') {
-        console.log('⚠️ News API key non configurée');
+      // 🔧 Vérification stricte de la clé API
+      if (!this.newsApiKey || this.newsApiKey === 'your_news_api_key_here' || this.newsApiKey === null) {
+        console.log('⚠️ News API désactivée (pas de clé configurée)');
         return [];
+      }
+
+      console.log('ℹ️ News API configurée, tentative d\'utilisation...');
+      
+      const cacheKey = this.getCacheKey('news', { category, pageSize });
+      const cached = this.getCachedData(cacheKey);
+
+      if (cached) {
+        console.log('📦 Actualités News API depuis le cache');
+        return cached;
       }
 
       this.stats.newsAPI.calls++;
       this.stats.newsAPI.lastCall = new Date();
 
-      const url = `${CONFIG.NEWS_API_URL}/top-headlines?country=${CONFIG.COUNTRY}&category=${category}&pageSize=${pageSize}&apiKey=${this.newsApiKey}`;
+      const url = `https://newsapi.org/v2/top-headlines?country=${CONFIG.COUNTRY}&category=${category}&pageSize=${pageSize}&apiKey=${this.newsApiKey}`;
 
       const response = await this.fetchWithRetry(url);
       const data = await response.json();
 
       if (data.status === 'ok') {
         const processedNews = data.articles
-            .filter(article => article.title && article.description && !article.title.includes('[Removed]'))
-            .map(article => ({
-              title: article.title,
-              content: this.truncateText(article.description || article.content, 200),
-              source: article.url,
-              publishedAt: article.publishedAt,
-              category: category.charAt(0).toUpperCase() + category.slice(1),
-              author: article.author,
-              sourceName: article.source?.name,
-              isReal: true,
-              verified: true
-            }));
+        .filter(article => article.title && article.description && !article.title.includes('[Removed]'))
+        .map(article => ({
+          title: article.title,
+          content: this.truncateText(article.description || article.content, 200),
+          source: article.url,
+          publishedAt: article.publishedAt,
+          category: category.charAt(0).toUpperCase() + category.slice(1),
+          author: article.author,
+          sourceName: article.source?.name,
+          isReal: true,
+          verified: true
+        }));
 
         this.setCachedData(cacheKey, processedNews);
         console.log(`✅ ${processedNews.length} actualités News API récupérées`);
@@ -200,15 +197,14 @@ class APIManager {
     }
   }
 
-  // 🔢 Numbers API - VERSION CORRIGÉE HTTPS
+  // 🔢 Numbers API - VERSION LOCALE (pas d'API externe)
   async getNumberFact() {
     try {
       this.stats.numbersAPI.calls++;
       this.stats.numbersAPI.lastCall = new Date();
 
       const randomNum = Math.floor(Math.random() * 1000);
-
-      // 🔧 Génération locale d'un fait mathématique (pas d'API externe)
+      
       const mathFacts = [
         `Le nombre ${randomNum} est ${randomNum % 2 === 0 ? 'pair' : 'impair'}.`,
         `${randomNum} en binaire s'écrit ${randomNum.toString(2)}.`,
@@ -218,6 +214,8 @@ class APIManager {
         `En hexadécimal, ${randomNum} s'écrit ${randomNum.toString(16).toUpperCase()}.`,
         `Le nombre ${randomNum} a ${randomNum.toString().length} chiffre(s).`,
         `${randomNum} multiplié par 9 égale ${randomNum * 9}.`,
+        `${randomNum} est ${isPrime(randomNum) ? 'un nombre premier' : 'un nombre composé'}.`,
+        `La somme des chiffres de ${randomNum} est ${randomNum.toString().split('').reduce((sum, digit) => sum + parseInt(digit), 0)}.`
       ];
 
       const randomFact = mathFacts[Math.floor(Math.random() * mathFacts.length)];
@@ -301,16 +299,11 @@ class APIManager {
     }
   }
 
-  // 🏛️ History API - VERSION LOCALE CORRIGÉE
+  // 🏛️ History API - VERSION LOCALE
   async getHistoryFact() {
     try {
       this.stats.historyAPI.calls++;
       this.stats.historyAPI.lastCall = new Date();
-
-      // 🔧 Faits historiques générés localement (pas d'API externe)
-      const today = new Date();
-      const month = today.getMonth() + 1;
-      const day = today.getDate();
 
       const historicalEvents = [
         { year: 1969, text: "Premier alunissage de Neil Armstrong et Buzz Aldrin" },
@@ -322,7 +315,12 @@ class APIManager {
         { year: 1969, text: "Festival de Woodstock" },
         { year: 1963, text: "Discours 'I Have a Dream' de Martin Luther King" },
         { year: 1991, text: "Invention du World Wide Web par Tim Berners-Lee" },
-        { year: 2001, text: "Lancement de Wikipedia" }
+        { year: 2001, text: "Lancement de Wikipedia" },
+        { year: 1969, text: "Premier vol du Concorde" },
+        { year: 1981, text: "Lancement de MTV" },
+        { year: 1990, text: "Unification de l'Allemagne" },
+        { year: 1957, text: "Lancement de Spoutnik 1" },
+        { year: 1969, text: "Création d'ARPANET, ancêtre d'Internet" }
       ];
 
       const randomEvent = historicalEvents[Math.floor(Math.random() * historicalEvents.length)];
@@ -360,64 +358,37 @@ class APIManager {
       historyAPI: false
     };
 
-    // Test News API (optionnelle)
+    // Test News API (optionnelle) - PLUS STRICT
     try {
-      if (this.newsApiKey !== 'YOUR_NEWS_API_KEY') {
+      if (this.newsApiKey && this.newsApiKey !== 'your_news_api_key_here' && this.newsApiKey !== null) {
         const news = await this.fetchNewsAPI('technology', 1);
         results.newsAPI = news.length > 0;
+        console.log('News API:', results.newsAPI ? '✅ OK' : '❌ Erreur');
+      } else {
+        console.log('News API: 💤 Désactivée (pas de clé configurée)');
       }
-      console.log('News API:', results.newsAPI ? '✅ OK' : '⚠️ Non configurée');
     } catch (error) {
       console.log('News API: ❌ Erreur -', error.message);
     }
 
     // Test APIs gratuites
-    try {
-      const fact = await this.getUselessFact();
-      results.uselessFacts = !!fact;
-      console.log('Useless Facts:', results.uselessFacts ? '✅ OK' : '❌ Erreur');
-    } catch (error) {
-      console.log('Useless Facts: ❌ Erreur');
-    }
+    const freeAPIs = [
+      { name: 'Useless Facts', test: () => this.getUselessFact(), key: 'uselessFacts' },
+      { name: 'Cat Facts', test: () => this.getCatFact(), key: 'catFacts' },
+      { name: 'Numbers API', test: () => this.getNumberFact(), key: 'numbersAPI' },
+      { name: 'Countries API', test: () => this.getCountryFact(), key: 'countriesAPI' },
+      { name: 'Joke API', test: () => this.getJoke(), key: 'jokeAPI' },
+      { name: 'History API', test: () => this.getHistoryFact(), key: 'historyAPI' }
+    ];
 
-    try {
-      const catFact = await this.getCatFact();
-      results.catFacts = !!catFact;
-      console.log('Cat Facts:', results.catFacts ? '✅ OK' : '❌ Erreur');
-    } catch (error) {
-      console.log('Cat Facts: ❌ Erreur');
-    }
-
-    try {
-      const numberFact = await this.getNumberFact();
-      results.numbersAPI = !!numberFact;
-      console.log('Numbers API:', results.numbersAPI ? '✅ OK' : '❌ Erreur');
-    } catch (error) {
-      console.log('Numbers API: ❌ Erreur');
-    }
-
-    try {
-      const countryFact = await this.getCountryFact();
-      results.countriesAPI = !!countryFact;
-      console.log('Countries API:', results.countriesAPI ? '✅ OK' : '❌ Erreur');
-    } catch (error) {
-      console.log('Countries API: ❌ Erreur');
-    }
-
-    try {
-      const joke = await this.getJoke();
-      results.jokeAPI = !!joke;
-      console.log('Joke API:', results.jokeAPI ? '✅ OK' : '❌ Erreur');
-    } catch (error) {
-      console.log('Joke API: ❌ Erreur');
-    }
-
-    try {
-      const historyFact = await this.getHistoryFact();
-      results.historyAPI = !!historyFact;
-      console.log('History API:', results.historyAPI ? '✅ OK' : '❌ Erreur');
-    } catch (error) {
-      console.log('History API: ❌ Erreur');
+    for (const api of freeAPIs) {
+      try {
+        const result = await api.test();
+        results[api.key] = !!result;
+        console.log(`${api.name}:`, results[api.key] ? '✅ OK' : '❌ Erreur');
+      } catch (error) {
+        console.log(`${api.name}: ❌ Erreur -`, error.message);
+      }
     }
 
     console.log('📊 Résumé des tests:', results);
@@ -431,9 +402,10 @@ class APIManager {
     try {
       console.log('🔄 Récupération d\'un mélange d\'actualités...');
 
-      // Récupérer des actualités récentes (si API disponible)
-      if (this.newsApiKey !== 'YOUR_NEWS_API_KEY') {
+      // 🔧 DÉSACTIVER News API par défaut
+      if (this.newsApiKey && this.newsApiKey !== 'your_news_api_key_here' && this.newsApiKey !== null) {
         try {
+          console.log('📰 Tentative News API...');
           const recentNews = await this.fetchNewsAPI('general', 2);
           results.push(...recentNews);
 
@@ -442,6 +414,8 @@ class APIManager {
         } catch (error) {
           console.warn('⚠️ News API non disponible:', error.message);
         }
+      } else {
+        console.log('📰 News API désactivée, utilisation des APIs gratuites uniquement');
       }
 
       // Récupérer des contenus depuis les APIs gratuites
@@ -454,8 +428,8 @@ class APIManager {
         () => this.getHistoryFact()
       ];
 
-      // Exécuter 3-4 APIs gratuites en parallèle
-      const promises = freeAPIs.slice(0, 4).map(api => api().catch(err => null));
+      // Exécuter toutes les APIs gratuites en parallèle
+      const promises = freeAPIs.map(api => api().catch(err => null));
       const freeResults = await Promise.all(promises);
 
       // Filtrer les résultats valides
@@ -497,17 +471,29 @@ class APIManager {
     return text.substring(0, maxLength).trim() + '...';
   }
 
-  // Méthode de debug pour afficher l'état de l'API Manager
+  // Méthode de debug
   debug() {
     console.group('🔧 Debug API Manager');
     console.log('📊 Statistiques:', this.getStats());
     console.log('🔑 Clés configurées:', {
-      newsAPI: this.newsApiKey !== 'YOUR_NEWS_API_KEY'
+      newsAPI: !!(this.newsApiKey && this.newsApiKey !== 'your_news_api_key_here' && this.newsApiKey !== null)
     });
     console.log('🆓 APIs gratuites:', 'Toutes disponibles sans clé');
     console.log('💾 Cache:', `${this.cache.size} entrées`);
     console.groupEnd();
   }
+}
+
+// 🔧 Fonction utilitaire pour vérifier si un nombre est premier
+function isPrime(num) {
+  if (num < 2) return false;
+  if (num === 2) return true;
+  if (num % 2 === 0) return false;
+  
+  for (let i = 3; i <= Math.sqrt(num); i += 2) {
+    if (num % i === 0) return false;
+  }
+  return true;
 }
 
 // Créer une instance unique
