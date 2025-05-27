@@ -1,16 +1,13 @@
 const CONFIG = {
-  NEWS_API_KEY: import.meta.env.VITE_NEWS_API_KEY || null, // ← Changé ici
-
-  // URLs des APIs gratuites - TOUTES EN HTTPS
   USELESS_FACTS_URL: 'https://uselessfacts.jsph.pl/api/v2',
   CAT_FACTS_URL: 'https://catfact.ninja',
   COUNTRIES_API_URL: 'https://restcountries.com/v3.1',
   JOKE_API_URL: 'https://v2.jokeapi.dev',
+  ADVICE_API_URL: 'https://api.adviceslip.com', // API de conseils
+  QUOTES_API_URL: 'https://api.quotable.io', // API de citations
 
   COUNTRY: 'fr',
-  NEWS_CATEGORIES: ['general', 'technology', 'science', 'health', 'business'],
 
-  // Paramètres de cache
   CACHE_DURATION: 5 * 60 * 1000, // 5 minutes
   MAX_RETRIES: 3,
   TIMEOUT: 10000 // 10 secondes
@@ -18,16 +15,16 @@ const CONFIG = {
 
 class APIManager {
   constructor() {
-    this.newsApiKey = CONFIG.NEWS_API_KEY;
     this.cache = new Map();
     this.stats = {
-      newsAPI: { calls: 0, errors: 0, lastCall: null },
       uselessFacts: { calls: 0, errors: 0, lastCall: null },
       catFacts: { calls: 0, errors: 0, lastCall: null },
       numbersAPI: { calls: 0, errors: 0, lastCall: null },
       countriesAPI: { calls: 0, errors: 0, lastCall: null },
       jokeAPI: { calls: 0, errors: 0, lastCall: null },
-      historyAPI: { calls: 0, errors: 0, lastCall: null }
+      historyAPI: { calls: 0, errors: 0, lastCall: null },
+      adviceAPI: { calls: 0, errors: 0, lastCall: null },
+      quotesAPI: { calls: 0, errors: 0, lastCall: null }
     };
   }
 
@@ -81,61 +78,6 @@ class APIManager {
       data,
       timestamp: Date.now()
     });
-  }
-
-  // 📰 News API - DÉSACTIVÉE PAR DÉFAUT
-  async fetchNewsAPI(category = 'general', pageSize = 5) {
-    try {
-      // 🔧 Vérification stricte de la clé API
-      if (!this.newsApiKey || this.newsApiKey === 'your_news_api_key_here' || this.newsApiKey === null) {
-        console.log('⚠️ News API désactivée (pas de clé configurée)');
-        return [];
-      }
-
-      console.log('ℹ️ News API configurée, tentative d\'utilisation...');
-      
-      const cacheKey = this.getCacheKey('news', { category, pageSize });
-      const cached = this.getCachedData(cacheKey);
-
-      if (cached) {
-        console.log('📦 Actualités News API depuis le cache');
-        return cached;
-      }
-
-      this.stats.newsAPI.calls++;
-      this.stats.newsAPI.lastCall = new Date();
-
-      const url = `https://newsapi.org/v2/top-headlines?country=${CONFIG.COUNTRY}&category=${category}&pageSize=${pageSize}&apiKey=${this.newsApiKey}`;
-
-      const response = await this.fetchWithRetry(url);
-      const data = await response.json();
-
-      if (data.status === 'ok') {
-        const processedNews = data.articles
-        .filter(article => article.title && article.description && !article.title.includes('[Removed]'))
-        .map(article => ({
-          title: article.title,
-          content: this.truncateText(article.description || article.content, 200),
-          source: article.url,
-          publishedAt: article.publishedAt,
-          category: category.charAt(0).toUpperCase() + category.slice(1),
-          author: article.author,
-          sourceName: article.source?.name,
-          isReal: true,
-          verified: true
-        }));
-
-        this.setCachedData(cacheKey, processedNews);
-        console.log(`✅ ${processedNews.length} actualités News API récupérées`);
-        return processedNews;
-      } else {
-        throw new Error(data.message || 'News API Error');
-      }
-    } catch (error) {
-      this.stats.newsAPI.errors++;
-      console.error('❌ News API Error:', error.message);
-      return [];
-    }
   }
 
   // 🎲 Useless Facts API (100% gratuite)
@@ -194,7 +136,7 @@ class APIManager {
     }
   }
 
-  // 🔢 Numbers API - VERSION LOCALE (pas d'API externe)
+  // 🔢 Numbers API - VERSION LOCALE (génération mathématique)
   async getNumberFact() {
     try {
       this.stats.numbersAPI.calls++;
@@ -296,34 +238,93 @@ class APIManager {
     }
   }
 
-  // 🏛️ History API - VERSION LOCALE
+  // 💡 Advice API (nouvelle - 100% gratuite)
+  async getAdvice() {
+    try {
+      this.stats.adviceAPI.calls++;
+      this.stats.adviceAPI.lastCall = new Date();
+
+      const response = await this.fetchWithRetry(`${CONFIG.ADVICE_API_URL}/advice`);
+      const data = await response.json();
+
+      const advice = {
+        title: "Conseil du jour",
+        content: data.slip.advice,
+        source: "https://api.adviceslip.com",
+        category: "Conseils",
+        publishedAt: new Date().toISOString(),
+        isReal: true,
+        verified: true
+      };
+
+      console.log('✅ Conseil récupéré');
+      return advice;
+    } catch (error) {
+      this.stats.adviceAPI.errors++;
+      console.error('❌ Advice API Error:', error.message);
+      return null;
+    }
+  }
+
+  // 📝 Quotes API (nouvelle - 100% gratuite)
+  async getQuote() {
+    try {
+      this.stats.quotesAPI.calls++;
+      this.stats.quotesAPI.lastCall = new Date();
+
+      const response = await this.fetchWithRetry(`${CONFIG.QUOTES_API_URL}/random?minLength=50&maxLength=150`);
+      const data = await response.json();
+
+      const quote = {
+        title: `Citation de ${data.author}`,
+        content: `"${data.content}" - ${data.author}`,
+        source: "https://quotable.io",
+        category: "Citations",
+        publishedAt: new Date().toISOString(),
+        isReal: true,
+        verified: true
+      };
+
+      console.log('✅ Citation récupérée');
+      return quote;
+    } catch (error) {
+      this.stats.quotesAPI.errors++;
+      console.error('❌ Quotes API Error:', error.message);
+      return null;
+    }
+  }
+
+  // 🏛️ History API - VERSION LOCALE (événements historiques)
   async getHistoryFact() {
     try {
       this.stats.historyAPI.calls++;
       this.stats.historyAPI.lastCall = new Date();
 
       const historicalEvents = [
-        { year: 1969, text: "Premier alunissage de Neil Armstrong et Buzz Aldrin" },
-        { year: 1989, text: "Chute du mur de Berlin" },
+        { year: 1969, text: "Premier alunissage de Neil Armstrong et Buzz Aldrin sur la Lune" },
+        { year: 1989, text: "Chute du mur de Berlin et fin de la guerre froide" },
         { year: 1945, text: "Fin de la Seconde Guerre mondiale en Europe" },
-        { year: 1776, text: "Déclaration d'indépendance des États-Unis" },
-        { year: 1789, text: "Début de la Révolution française" },
+        { year: 1776, text: "Déclaration d'indépendance des États-Unis d'Amérique" },
+        { year: 1789, text: "Début de la Révolution française avec la prise de la Bastille" },
         { year: 1492, text: "Christophe Colomb découvre l'Amérique" },
-        { year: 1969, text: "Festival de Woodstock" },
+        { year: 1969, text: "Festival de Woodstock rassemble 400 000 personnes" },
         { year: 1963, text: "Discours 'I Have a Dream' de Martin Luther King" },
         { year: 1991, text: "Invention du World Wide Web par Tim Berners-Lee" },
-        { year: 2001, text: "Lancement de Wikipedia" },
-        { year: 1969, text: "Premier vol du Concorde" },
-        { year: 1981, text: "Lancement de MTV" },
-        { year: 1990, text: "Unification de l'Allemagne" },
-        { year: 1957, text: "Lancement de Spoutnik 1" },
-        { year: 1969, text: "Création d'ARPANET, ancêtre d'Internet" }
+        { year: 2001, text: "Lancement de Wikipedia, l'encyclopédie libre" },
+        { year: 1969, text: "Premier vol commercial du Concorde supersonique" },
+        { year: 1981, text: "Lancement de MTV et révolution de la musique télévisée" },
+        { year: 1990, text: "Réunification officielle de l'Allemagne" },
+        { year: 1957, text: "Lancement de Spoutnik 1, premier satellite artificiel" },
+        { year: 1969, text: "Création d'ARPANET, ancêtre d'Internet" },
+        { year: 1953, text: "Découverte de la structure de l'ADN par Watson et Crick" },
+        { year: 1969, text: "Premier festival de rock de Woodstock" },
+        { year: 1989, text: "Invention du Web par Tim Berners-Lee au CERN" }
       ];
 
       const randomEvent = historicalEvents[Math.floor(Math.random() * historicalEvents.length)];
 
       const fact = {
-        title: `Il s'est passé en ${randomEvent.year}`,
+        title: `Événement historique de ${randomEvent.year}`,
         content: randomEvent.text,
         source: "https://fr.wikipedia.org/wiki/Histoire",
         category: "Histoire",
@@ -343,38 +344,29 @@ class APIManager {
 
   // 🧪 Test de toutes les APIs
   async testAPIs() {
-    console.log('🧪 Test de toutes les APIs...');
+    console.log('🧪 Test de toutes les APIs fonctionnelles...');
 
     const results = {
-      newsAPI: false,
       uselessFacts: false,
       catFacts: false,
       numbersAPI: false,
       countriesAPI: false,
       jokeAPI: false,
-      historyAPI: false
+      historyAPI: false,
+      adviceAPI: false,
+      quotesAPI: false
     };
 
-    try {
-      if (this.newsApiKey && this.newsApiKey !== null) {
-        const news = await this.fetchNewsAPI('technology', 1);
-        results.newsAPI = news.length > 0;
-        console.log('News API:', results.newsAPI ? '✅ OK' : '❌ Erreur');
-      } else {
-        console.log('News API: 💤 Désactivée (pas de clé configurée)');
-      }
-    } catch (error) {
-      console.log('News API: ❌ Erreur -', error.message);
-    }
-
-    // Test APIs gratuites
+    // Test toutes les APIs gratuites
     const freeAPIs = [
       { name: 'Useless Facts', test: () => this.getUselessFact(), key: 'uselessFacts' },
       { name: 'Cat Facts', test: () => this.getCatFact(), key: 'catFacts' },
       { name: 'Numbers API', test: () => this.getNumberFact(), key: 'numbersAPI' },
       { name: 'Countries API', test: () => this.getCountryFact(), key: 'countriesAPI' },
       { name: 'Joke API', test: () => this.getJoke(), key: 'jokeAPI' },
-      { name: 'History API', test: () => this.getHistoryFact(), key: 'historyAPI' }
+      { name: 'History API', test: () => this.getHistoryFact(), key: 'historyAPI' },
+      { name: 'Advice API', test: () => this.getAdvice(), key: 'adviceAPI' },
+      { name: 'Quotes API', test: () => this.getQuote(), key: 'quotesAPI' }
     ];
 
     for (const api of freeAPIs) {
@@ -388,6 +380,7 @@ class APIManager {
     }
 
     console.log('📊 Résumé des tests:', results);
+    console.log('ℹ️ News API désactivée (nécessite un serveur backend)');
     return results;
   }
 
@@ -396,36 +389,22 @@ class APIManager {
     const results = [];
 
     try {
-      console.log('🔄 Récupération d\'un mélange d\'actualités...');
+      console.log('🔄 Récupération d\'actualités variées...');
 
-      // 🔧 DÉSACTIVER News API par défaut
-      if (this.newsApiKey && this.newsApiKey !== null) {
-        try {
-          console.log('📰 Tentative News API...');
-          const recentNews = await this.fetchNewsAPI('general', 2);
-          results.push(...recentNews);
-
-          const techNews = await this.fetchNewsAPI('technology', 1);
-          results.push(...techNews);
-        } catch (error) {
-          console.warn('⚠️ News API non disponible:', error.message);
-        }
-      } else {
-        console.log('📰 News API désactivée, utilisation des APIs gratuites uniquement');
-      }
-
-      // Récupérer des contenus depuis les APIs gratuites
+      // Récupérer des contenus depuis TOUTES les APIs gratuites
       const freeAPIs = [
         () => this.getUselessFact(),
         () => this.getCatFact(),
         () => this.getNumberFact(),
         () => this.getCountryFact(),
         () => this.getJoke(),
-        () => this.getHistoryFact()
+        () => this.getHistoryFact(),
+        () => this.getAdvice(),
+        () => this.getQuote()
       ];
 
-      // Exécuter toutes les APIs gratuites en parallèle
-      const promises = freeAPIs.map(api => api().catch(err => null));
+      // Exécuter 6 APIs gratuites en parallèle pour avoir du contenu varié
+      const promises = freeAPIs.slice(0, 6).map(api => api().catch(err => null));
       const freeResults = await Promise.all(promises);
 
       // Filtrer les résultats valides
@@ -436,7 +415,7 @@ class APIManager {
       console.error('❌ Erreur lors du mélange des actualités:', error);
     }
 
-    console.log(`📊 Total: ${results.length} actualités récupérées`);
+    console.log(`📊 Total: ${results.length} contenus récupérés`);
     return results;
   }
 
@@ -471,11 +450,9 @@ class APIManager {
   debug() {
     console.group('🔧 Debug API Manager');
     console.log('📊 Statistiques:', this.getStats());
-    console.log('🔑 Clés configurées:', {
-      newsAPI: !!(this.newsApiKey && this.newsApiKey !== null)
-    });
-    console.log('🆓 APIs gratuites:', 'Toutes disponibles sans clé');
+    console.log('🆓 APIs gratuites:', '8 APIs fonctionnelles');
     console.log('💾 Cache:', `${this.cache.size} entrées`);
+    console.log('ℹ️ Note:', 'News API désactivée (nécessite backend)');
     console.groupEnd();
   }
 }
