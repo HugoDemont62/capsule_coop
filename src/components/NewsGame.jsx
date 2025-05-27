@@ -1,6 +1,8 @@
+// src/components/NewsGame.jsx - MODIFIÉ pour Twitch
 import React, { useState, useEffect } from 'react';
 import { apiManager } from '../services/apiManager';
 import { fakeNewsData } from '../data/fakeNews';
+import TwitchIntegration from './TwitchIntegration';
 
 const NewsGame = ({ apiStatus }) => {
   const [correctScore, setCorrectScore] = useState(0);
@@ -11,6 +13,10 @@ const NewsGame = ({ apiStatus }) => {
   const [gameResult, setGameResult] = useState(null);
   const [isAnswered, setIsAnswered] = useState(false);
   const [usedRealNews, setUsedRealNews] = useState(new Set());
+
+  // 🎮 États Twitch
+  const [twitchVotes, setTwitchVotes] = useState({ trueVotes: 0, falseVotes: 0, totalVotes: 0 });
+  const [currentQuestionId, setCurrentQuestionId] = useState(null);
 
   useEffect(() => {
     loadRealNews();
@@ -90,6 +96,13 @@ const NewsGame = ({ apiStatus }) => {
     setIsAnswered(false);
     setGameResult(null);
 
+    // 🎮 Générer un ID unique pour la question
+    const questionId = `q_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    setCurrentQuestionId(questionId);
+
+    // Réinitialiser les votes Twitch
+    setTwitchVotes({ trueVotes: 0, falseVotes: 0, totalVotes: 0 });
+
     // 50% de chance d'avoir une vraie news
     const isRealNews = Math.random() > 0.5;
 
@@ -108,7 +121,8 @@ const NewsGame = ({ apiStatus }) => {
 
       setCurrentQuestion({
         ...selectedNews,
-        isReal: true
+        isReal: true,
+        id: questionId
       });
 
       setUsedRealNews(prev => new Set([...prev, selectedNews.title]));
@@ -119,7 +133,8 @@ const NewsGame = ({ apiStatus }) => {
       setCurrentQuestion({
         ...fakeNewsData[randomIndex],
         isReal: false,
-        source: null
+        source: null,
+        id: questionId
       });
     }
   };
@@ -149,113 +164,161 @@ const NewsGame = ({ apiStatus }) => {
     showNextQuestion();
   };
 
+  // 🎮 Callback pour recevoir les votes Twitch
+  const handleTwitchVoteUpdate = (voteData) => {
+    setTwitchVotes({
+      trueVotes: voteData.trueVotes,
+      falseVotes: voteData.falseVotes,
+      totalVotes: voteData.totalVotes
+    });
+  };
+
   if (isLoading) {
     return (
-      <div className="game-container">
-        <div style={{ textAlign: 'center', padding: '40px' }}>
-          <div className="spinner"></div>
-          <p>Chargement des actualités...</p>
+        <div className="game-container">
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <div className="spinner"></div>
+            <p>Chargement des actualités...</p>
+          </div>
         </div>
-      </div>
     );
   }
 
   return (
-    <div className="game-container">
-      <div className="score-board">
-        <div className="score">
-          <div style={{ fontSize: '2rem', marginBottom: '8px' }}>✓</div>
-          <div>Réponses correctes</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 'bold', marginTop: '5px' }}>{correctScore}</div>
-        </div>
-        <div className="score">
-          <div style={{ fontSize: '2rem', marginBottom: '8px' }}>✗</div>
-          <div>Réponses incorrectes</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 'bold', marginTop: '5px' }}>{incorrectScore}</div>
-        </div>
-      </div>
+      <div className="game-container">
+        {/* 🎮 Intégration Twitch */}
+        <TwitchIntegration
+            onVoteUpdate={handleTwitchVoteUpdate}
+            currentQuestionId={currentQuestionId}
+            isQuestionActive={!isAnswered}
+        />
 
-      {currentQuestion && (
-        <>
-          <div className="news-card">
-            <div className="news-title">{currentQuestion.title}</div>
-            <div className="news-content">{currentQuestion.content}</div>
+        <div className="score-board">
+          <div className="score">
+            <div style={{ fontSize: '2rem', marginBottom: '8px' }}>✓</div>
+            <div>Réponses correctes</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', marginTop: '5px' }}>{correctScore}</div>
+          </div>
+          <div className="score">
+            <div style={{ fontSize: '2rem', marginBottom: '8px' }}>✗</div>
+            <div>Réponses incorrectes</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', marginTop: '5px' }}>{incorrectScore}</div>
+          </div>
+        </div>
 
-            {currentQuestion.category && (
-              <div className="news-meta">
+        {currentQuestion && (
+            <>
+              <div className="news-card">
+                <div className="news-title">{currentQuestion.title}</div>
+                <div className="news-content">{currentQuestion.content}</div>
+
+                {currentQuestion.category && (
+                    <div className="news-meta">
                 <span className="news-category">
                   📂 {currentQuestion.category}
                 </span>
-                {currentQuestion.publishedAt && (
-                  <span>
+                      {currentQuestion.publishedAt && (
+                          <span>
                     📅 {new Date(currentQuestion.publishedAt).toLocaleDateString('fr-FR')}
                   </span>
+                      )}
+                    </div>
                 )}
               </div>
-            )}
-          </div>
 
-          {!isAnswered && (
-            <div className="buttons-container">
-              <button
-                className="btn btn-true"
-                onClick={() => checkAnswer(true)}
-              >
-                ✓ VRAI
-              </button>
-              <button
-                className="btn btn-false"
-                onClick={() => checkAnswer(false)}
-              >
-                ✗ FAUX
-              </button>
-            </div>
-          )}
-
-          {gameResult && (
-            <div className={`result ${gameResult.isCorrect ? 'correct' : 'incorrect'}`}>
-              <div style={{ fontSize: '1.5rem', marginBottom: '15px' }}>
-                {gameResult.isCorrect ? '🎯 Excellente réponse !' : '⚠️ Réponse incorrecte'}
-              </div>
-
-              <div className="result-details">
-                {currentQuestion.isReal ? (
-                  <>
-                    <div>Cette actualité est {gameResult.isCorrect ? 'effectivement' : 'pourtant'} authentique</div>
-                    {currentQuestion.source && (
-                      <a
-                        href={currentQuestion.source}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="source-link"
-                      >
-                        🔗 Explorer la source
-                      </a>
-                    )}
-                    {gameResult.validation?.isValidated && (
-                      <div style={{ marginTop: '15px', fontSize: '0.9rem', color: '#4ade80' }}>
-                        ✅ Validation : {gameResult.validation.rating}
+              {!isAnswered && (
+                  <div className="buttons-container">
+                    <button
+                        className="btn btn-true"
+                        onClick={() => checkAnswer(true)}
+                    >
+                      <div className="btn-content">
+                        <span className="btn-text">✓ VRAI</span>
+                        {twitchVotes.totalVotes > 0 && (
+                            <span className="btn-vote-count">
+                      {twitchVotes.trueVotes} 👥
+                    </span>
+                        )}
                       </div>
-                    )}
-                  </>
-                ) : (
-                  <div>
-                    {gameResult.isCorrect
-                      ? 'Bravo ! Cette information était effectivement fictive'
-                      : 'Cette actualité était inventée • Il fallait répondre FAUX'
-                    }
+                    </button>
+                    <button
+                        className="btn btn-false"
+                        onClick={() => checkAnswer(false)}
+                    >
+                      <div className="btn-content">
+                        <span className="btn-text">✗ FAUX</span>
+                        {twitchVotes.totalVotes > 0 && (
+                            <span className="btn-vote-count">
+                      {twitchVotes.falseVotes} 👥
+                    </span>
+                        )}
+                      </div>
+                    </button>
                   </div>
-                )}
-              </div>
+              )}
 
-              <button className="next-btn" onClick={nextQuestion}>
-                ➤ Actualité suivante • {correctScore + incorrectScore}/∞
-              </button>
-            </div>
-          )}
-        </>
-      )}
-    </div>
+              {gameResult && (
+                  <div className={`result ${gameResult.isCorrect ? 'correct' : 'incorrect'}`}>
+                    <div style={{ fontSize: '1.5rem', marginBottom: '15px' }}>
+                      {gameResult.isCorrect ? '🎯 Excellente réponse !' : '⚠️ Réponse incorrecte'}
+                    </div>
+
+                    {/* 🎮 Résultats des votes Twitch */}
+                    {twitchVotes.totalVotes > 0 && (
+                        <div className="twitch-results">
+                          <h4>📊 Résultats du chat Twitch:</h4>
+                          <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', margin: '10px 0' }}>
+                    <span style={{ color: '#4ade80' }}>
+                      VRAI: {twitchVotes.trueVotes} ({Math.round((twitchVotes.trueVotes / twitchVotes.totalVotes) * 100)}%)
+                    </span>
+                            <span style={{ color: '#f87171' }}>
+                      FAUX: {twitchVotes.falseVotes} ({Math.round((twitchVotes.falseVotes / twitchVotes.totalVotes) * 100)}%)
+                    </span>
+                          </div>
+                          <div style={{ fontSize: '0.9rem', opacity: '0.8' }}>
+                            Total: {twitchVotes.totalVotes} votes du chat
+                          </div>
+                        </div>
+                    )}
+
+                    <div className="result-details">
+                      {currentQuestion.isReal ? (
+                          <>
+                            <div>Cette actualité est {gameResult.isCorrect ? 'effectivement' : 'pourtant'} authentique</div>
+                            {currentQuestion.source && (
+                                <a
+                                    href={currentQuestion.source}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="source-link"
+                                >
+                                  🔗 Explorer la source
+                                </a>
+                            )}
+                            {gameResult.validation?.isValidated && (
+                                <div style={{ marginTop: '15px', fontSize: '0.9rem', color: '#4ade80' }}>
+                                  ✅ Validation : {gameResult.validation.rating}
+                                </div>
+                            )}
+                          </>
+                      ) : (
+                          <div>
+                            {gameResult.isCorrect
+                                ? 'Bravo ! Cette information était effectivement fictive'
+                                : 'Cette actualité était inventée • Il fallait répondre FAUX'
+                            }
+                          </div>
+                      )}
+                    </div>
+
+                    <button className="next-btn" onClick={nextQuestion}>
+                      ➤ Actualité suivante • {correctScore + incorrectScore}/∞
+                    </button>
+                  </div>
+              )}
+            </>
+        )}
+      </div>
   );
 };
 
