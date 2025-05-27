@@ -1,6 +1,3 @@
-// src/services/apiManager.js - VERSION SANS NEWS API
-
-// Configuration des APIs (UNIQUEMENT GRATUITES + HTTPS)
 const CONFIG = {
   NEWS_API_KEY: import.meta.env.VITE_NEWS_API_KEY || null, // ← Changé ici
 
@@ -358,9 +355,8 @@ class APIManager {
       historyAPI: false
     };
 
-    // Test News API (optionnelle) - PLUS STRICT
     try {
-      if (this.newsApiKey && this.newsApiKey !== 'your_news_api_key_here' && this.newsApiKey !== null) {
+      if (this.newsApiKey && this.newsApiKey !== null) {
         const news = await this.fetchNewsAPI('technology', 1);
         results.newsAPI = news.length > 0;
         console.log('News API:', results.newsAPI ? '✅ OK' : '❌ Erreur');
@@ -403,7 +399,7 @@ class APIManager {
       console.log('🔄 Récupération d\'un mélange d\'actualités...');
 
       // 🔧 DÉSACTIVER News API par défaut
-      if (this.newsApiKey && this.newsApiKey !== 'your_news_api_key_here' && this.newsApiKey !== null) {
+      if (this.newsApiKey && this.newsApiKey !== null) {
         try {
           console.log('📰 Tentative News API...');
           const recentNews = await this.fetchNewsAPI('general', 2);
@@ -476,7 +472,7 @@ class APIManager {
     console.group('🔧 Debug API Manager');
     console.log('📊 Statistiques:', this.getStats());
     console.log('🔑 Clés configurées:', {
-      newsAPI: !!(this.newsApiKey && this.newsApiKey !== 'your_news_api_key_here' && this.newsApiKey !== null)
+      newsAPI: !!(this.newsApiKey && this.newsApiKey !== null)
     });
     console.log('🆓 APIs gratuites:', 'Toutes disponibles sans clé');
     console.log('💾 Cache:', `${this.cache.size} entrées`);
