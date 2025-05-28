@@ -1,19 +1,18 @@
-// src/services/twitchService.js
+// src/services/twitchService.js - VERSION CORRIGÉE
 
 // Configuration Twitch
 const TWITCH_CONFIG = {
-    // Tu devras remplacer ces valeurs par les tiennes
-    CLIENT_ID: import.meta.env.VITE_TWITCH_CLIENT_ID || 'ton_client_id',
-    REDIRECT_URI: import.meta.env.VITE_TWITCH_REDIRECT_URI || 'http://localhost:5173',
-    CHANNEL_NAME: import.meta.env.VITE_TWITCH_CHANNEL || 'ton_nom_de_chaine',
+    CLIENT_ID: import.meta.env.VITE_TWITCH_CLIENT_ID,
+    REDIRECT_URI: import.meta.env.VITE_TWITCH_REDIRECT_URI || window.location.origin,
+    CHANNEL_NAME: import.meta.env.VITE_TWITCH_CHANNEL,
 
     // WebSocket pour le chat Twitch
     WEBSOCKET_URL: 'wss://irc-ws.chat.twitch.tv:443',
 
     // Commandes de vote
     VOTE_COMMANDS: {
-        TRUE: ['!vrai', '!true', '!v', '!1'],
-        FALSE: ['!faux', '!false', '!f', '!0']
+        TRUE: ['!vrai', '!true', '!v', '!1', '!oui', '!yes'],
+        FALSE: ['!faux', '!false', '!f', '!0', '!non', '!no']
     }
 };
 
@@ -40,87 +39,153 @@ class TwitchChatService {
         // État du quiz
         this.isVotingActive = false;
         this.currentQuestionId = null;
+
+        // ⭐ LOGS DE DEBUG
+        console.log('🎮 TwitchChatService initialisé');
+        console.log('📺 Canal cible:', this.channelName);
+        console.log('🔑 Client ID:', TWITCH_CONFIG.CLIENT_ID ? '✅ Configuré' : '❌ Manquant');
     }
 
     // 🔐 Authentification OAuth Twitch
     async authenticate() {
         try {
-            // Vérifier si on a déjà un token dans le localStorage
+            console.log('🔐 Début authentification Twitch...');
+
+            // ⭐ VÉRIFIER TOKEN EXISTANT
             const savedToken = localStorage.getItem('twitch_access_token');
             const savedUsername = localStorage.getItem('twitch_username');
 
             if (savedToken && savedUsername) {
-                // Vérifier si le token est encore valide
+                console.log('🔍 Token trouvé en cache...');
                 const isValid = await this.validateToken(savedToken);
                 if (isValid) {
                     this.accessToken = savedToken;
                     this.username = savedUsername;
-                    console.log('✅ Token Twitch valide trouvé');
+                    console.log('✅ Token cache valide pour:', savedUsername);
                     return true;
                 } else {
-                    // Token expiré, nettoyer
-                    localStorage.removeItem('twitch_access_token');
-                    localStorage.removeItem('twitch_username');
+                    console.log('❌ Token cache expiré, nettoyage...');
+                    this.clearStoredAuth();
                 }
             }
 
-            // Rediriger vers l'auth Twitch
+            // ⭐ NOUVELLE AUTHENTIFICATION
+            console.log('🚀 Lancement nouvelle authentification...');
             const authUrl = this.buildAuthUrl();
+            console.log('🔗 URL auth générée:', authUrl);
 
-            console.log('🔐 Authentification Twitch requise');
-            console.log('URL d\'auth:', authUrl);
+            // ⭐ OUVRIR POPUP D'AUTH
+            const popup = window.open(
+                authUrl, 
+                'twitchAuth', 
+                'width=500,height=700,scrollbars=yes,resizable=yes,status=yes,location=yes,toolbar=no,menubar=no'
+            );
 
-            // Option 1: Ouvrir dans une popup
-            const popup = window.open(authUrl, 'twitchAuth', 'width=500,height=600');
+            if (!popup) {
+                throw new Error('Popup bloquée par le navigateur. Autorisez les popups pour ce site.');
+            }
 
             return new Promise((resolve, reject) => {
+                let resolved = false;
+
+                // ⭐ ÉCOUTER LES ÉVÉNEMENTS DE SUCCÈS
+                const handleAuthSuccess = (event) => {
+                    if (resolved) return;
+                    resolved = true;
+
+                    console.log('✅ Authentification réussie via événement:', event.detail);
+                    this.accessToken = event.detail.accessToken;
+                    this.username = event.detail.username;
+
+                    window.removeEventListener('twitch-auth-success', handleAuthSuccess);
+                    window.removeEventListener('twitch-auth-error', handleAuthError);
+                    
+                    if (!popup.closed) popup.close();
+                    resolve(true);
+                };
+
+                // ⭐ ÉCOUTER LES ERREURS
+                const handleAuthError = (event) => {
+                    if (resolved) return;
+                    resolved = true;
+
+                    console.error('❌ Erreur authentification:', event.detail.error);
+                    window.removeEventListener('twitch-auth-success', handleAuthSuccess);
+                    window.removeEventListener('twitch-auth-error', handleAuthError);
+                    
+                    if (!popup.closed) popup.close();
+                    reject(new Error('Authentification échouée: ' + event.detail.error));
+                };
+
+                // ⭐ VÉRIFIER FERMETURE POPUP
                 const checkClosed = setInterval(() => {
-                    if (popup.closed) {
+                    if (popup.closed && !resolved) {
+                        resolved = true;
                         clearInterval(checkClosed);
-                        // Vérifier si l'auth a réussi
+                        clearTimeout(timeoutId);
+
+                        // Vérifier si l'auth a réussi malgré la fermeture
                         const token = localStorage.getItem('twitch_access_token');
                         const username = localStorage.getItem('twitch_username');
 
                         if (token && username) {
+                            console.log('✅ Auth réussie après fermeture popup');
                             this.accessToken = token;
                             this.username = username;
+                            window.removeEventListener('twitch-auth-success', handleAuthSuccess);
+                            window.removeEventListener('twitch-auth-error', handleAuthError);
                             resolve(true);
                         } else {
-                            reject(new Error('Authentification annulée'));
+                            console.log('❌ Popup fermée sans authentification');
+                            window.removeEventListener('twitch-auth-success', handleAuthSuccess);
+                            window.removeEventListener('twitch-auth-error', handleAuthError);
+                            reject(new Error('Authentification annulée par l\'utilisateur'));
                         }
                     }
                 }, 1000);
 
-                // Timeout après 5 minutes
-                setTimeout(() => {
-                    clearInterval(checkClosed);
-                    if (!popup.closed) {
-                        popup.close();
+                // ⭐ TIMEOUT DE SÉCURITÉ
+                const timeoutId = setTimeout(() => {
+                    if (!resolved) {
+                        resolved = true;
+                        clearInterval(checkClosed);
+                        window.removeEventListener('twitch-auth-success', handleAuthSuccess);
+                        window.removeEventListener('twitch-auth-error', handleAuthError);
+                        
+                        if (!popup.closed) popup.close();
+                        reject(new Error('Timeout d\'authentification (5 minutes)'));
                     }
-                    reject(new Error('Timeout d\'authentification'));
-                }, 300000);
+                }, 300000); // 5 minutes
+
+                // ⭐ ENREGISTRER LES LISTENERS
+                window.addEventListener('twitch-auth-success', handleAuthSuccess);
+                window.addEventListener('twitch-auth-error', handleAuthError);
             });
 
         } catch (error) {
-            console.error('❌ Erreur d\'authentification Twitch:', error);
+            console.error('❌ Erreur authentification Twitch:', error);
             throw error;
         }
     }
 
-    // Construire l'URL d'authentification
+    // ⭐ CONSTRUIRE URL D'AUTHENTIFICATION
     buildAuthUrl() {
+        const state = Math.random().toString(36).substring(2, 15);
+        localStorage.setItem('twitch_auth_state', state);
+
         const params = new URLSearchParams({
             client_id: TWITCH_CONFIG.CLIENT_ID,
             redirect_uri: TWITCH_CONFIG.REDIRECT_URI,
             response_type: 'token',
             scope: 'chat:read chat:edit',
-            state: Math.random().toString(36).substring(7) // Protection CSRF
+            state: state,
+            force_verify: 'true' // Force l'utilisateur à reconfirmer
         });
 
         return `https://id.twitch.tv/oauth2/authorize?${params.toString()}`;
     }
 
-    // Valider le token
+    // ⭐ VALIDER LE TOKEN
     async validateToken(token) {
         try {
             const response = await fetch('https://id.twitch.tv/oauth2/validate', {
@@ -128,54 +193,119 @@ class TwitchChatService {
                     'Authorization': `Bearer ${token}`
                 }
             });
-            return response.ok;
+
+            if (response.ok) {
+                const data = await response.json();
+                console.log('✅ Token valide pour:', data.login);
+                return true;
+            } else {
+                console.log('❌ Token invalide:', response.status);
+                return false;
+            }
         } catch (error) {
-            console.error('Erreur validation token:', error);
+            console.error('❌ Erreur validation token:', error);
             return false;
         }
+    }
+
+    // ⭐ NETTOYER L'AUTHENTIFICATION STOCKÉE
+    clearStoredAuth() {
+        localStorage.removeItem('twitch_access_token');
+        localStorage.removeItem('twitch_username');
+        localStorage.removeItem('twitch_user_id');
+        localStorage.removeItem('twitch_display_name');
+        localStorage.removeItem('twitch_auth_data');
+        localStorage.removeItem('twitch_auth_state');
     }
 
     // 🔌 Connexion au chat Twitch via WebSocket
     async connectToChat() {
         try {
             if (!this.accessToken) {
-                throw new Error('Token d\'accès requis');
+                throw new Error('Token d\'accès requis - authentifiez-vous d\'abord');
+            }
+
+            if (!this.channelName) {
+                throw new Error('Nom de canal requis - vérifiez VITE_TWITCH_CHANNEL');
             }
 
             console.log('🔌 Connexion au chat Twitch...');
+            console.log('👤 Utilisateur:', this.username);
+            console.log('📺 Canal:', this.channelName);
+
+            // ⭐ FERMER CONNEXION EXISTANTE
+            if (this.websocket) {
+                this.websocket.close();
+                this.websocket = null;
+            }
 
             this.websocket = new WebSocket(TWITCH_CONFIG.WEBSOCKET_URL);
 
-            this.websocket.onopen = () => {
-                console.log('✅ Connexion WebSocket ouverte');
+            // ⭐ PROMESSE POUR ATTENDRE LA CONNEXION
+            return new Promise((resolve, reject) => {
+                let connected = false;
 
-                // Authentification IRC
-                this.websocket.send('CAP REQ :twitch.tv/membership twitch.tv/tags twitch.tv/commands');
-                this.websocket.send(`PASS oauth:${this.accessToken}`);
-                this.websocket.send(`NICK ${this.username}`);
+                this.websocket.onopen = () => {
+                    console.log('✅ WebSocket ouvert');
 
-                // Rejoindre le canal
+                    // ⭐ SÉQUENCE D'AUTHENTIFICATION IRC
+                    this.websocket.send('CAP REQ :twitch.tv/membership twitch.tv/tags twitch.tv/commands');
+                    this.websocket.send(`PASS oauth:${this.accessToken}`);
+                    this.websocket.send(`NICK ${this.username}`);
+                };
+
+                this.websocket.onmessage = (event) => {
+                    const message = event.data.trim();
+                    
+                    // ⭐ VÉRIFIER AUTHENTIFICATION RÉUSSIE
+                    if (message.includes('001') && !connected) {
+                        connected = true;
+                        console.log('✅ Authentifié sur Twitch IRC');
+                        
+                        // ⭐ REJOINDRE LE CANAL
+                        setTimeout(() => {
+                            this.websocket.send(`JOIN #${this.channelName.toLowerCase()}`);
+                            console.log(`📺 Rejoint le canal #${this.channelName}`);
+                            
+                            this.isConnected = true;
+                            if (this.onConnectionChange) {
+                                this.onConnectionChange(true);
+                            }
+                            resolve();
+                        }, 1000);
+                        return;
+                    }
+
+                    // ⭐ TRAITER LES AUTRES MESSAGES
+                    this.handleChatMessage(message);
+                };
+
+                this.websocket.onclose = (event) => {
+                    console.log('🔌 WebSocket fermé:', event.code, event.reason);
+                    this.isConnected = false;
+                    if (this.onConnectionChange) {
+                        this.onConnectionChange(false);
+                    }
+                    
+                    if (!connected) {
+                        reject(new Error('Connexion fermée avant authentification'));
+                    }
+                };
+
+                this.websocket.onerror = (error) => {
+                    console.error('❌ Erreur WebSocket:', error);
+                    if (!connected) {
+                        reject(error);
+                    }
+                };
+
+                // ⭐ TIMEOUT DE CONNEXION
                 setTimeout(() => {
-                    this.websocket.send(`JOIN #${this.channelName.toLowerCase()}`);
-                    console.log(`📺 Rejoint le canal #${this.channelName}`);
-                }, 1000);
-            };
-
-            this.websocket.onmessage = (event) => {
-                this.handleChatMessage(event.data);
-            };
-
-            this.websocket.onclose = () => {
-                console.log('🔌 Connexion WebSocket fermée');
-                this.isConnected = false;
-                if (this.onConnectionChange) {
-                    this.onConnectionChange(false);
-                }
-            };
-
-            this.websocket.onerror = (error) => {
-                console.error('❌ Erreur WebSocket:', error);
-            };
+                    if (!connected) {
+                        reject(new Error('Timeout de connexion'));
+                    }
+                }, 10000);
+            });
 
         } catch (error) {
             console.error('❌ Erreur connexion chat:', error);
@@ -188,34 +318,23 @@ class TwitchChatService {
         const lines = rawMessage.split('\r\n').filter(line => line.length > 0);
 
         lines.forEach(line => {
-            // Gérer les PING pour maintenir la connexion
+            // ⭐ GÉRER LES PING
             if (line.startsWith('PING')) {
                 this.websocket.send(line.replace('PING', 'PONG'));
                 return;
             }
 
-            // Vérifier si on est connecté
-            if (line.includes('001')) {
-                this.isConnected = true;
-                console.log('✅ Authentifié sur Twitch IRC');
-                if (this.onConnectionChange) {
-                    this.onConnectionChange(true);
-                }
-                return;
-            }
-
-            // Traiter les messages PRIVMSG (messages du chat)
+            // ⭐ TRAITER LES MESSAGES PRIVMSG
             if (line.includes('PRIVMSG')) {
                 this.parsePrivateMessage(line);
             }
         });
     }
 
-    // Analyser les messages privés
+    // ⭐ ANALYSER LES MESSAGES PRIVÉS
     parsePrivateMessage(message) {
         try {
-            // Extraire les métadonnées et le contenu
-            const tagsPart = message.split(' :')[0];
+            // Extraire le contenu du message
             const messageParts = message.split(' :');
             const messageContent = messageParts[messageParts.length - 1].trim().toLowerCase();
 
@@ -225,7 +344,7 @@ class TwitchChatService {
 
             console.log(`💬 ${username}: ${messageContent}`);
 
-            // Notifier les listeners du message
+            // ⭐ NOTIFIER LES LISTENERS DU MESSAGE
             if (this.onChatMessage) {
                 this.onChatMessage({
                     username,
@@ -234,19 +353,19 @@ class TwitchChatService {
                 });
             }
 
-            // Vérifier si c'est un vote et si le vote est actif
+            // ⭐ TRAITER LES VOTES SI ACTIFS
             if (this.isVotingActive) {
                 this.processVote(username, messageContent);
             }
 
         } catch (error) {
-            console.error('Erreur parsing message:', error);
+            console.error('❌ Erreur parsing message:', error);
         }
     }
 
     // 🗳️ Traitement des votes
     processVote(username, message) {
-        // Éviter les votes multiples du même utilisateur
+        // ⭐ ÉVITER LES VOTES MULTIPLES
         const voterId = `${this.currentQuestionId}_${username}`;
         if (this.votes.voters.has(voterId)) {
             return; // Utilisateur a déjà voté pour cette question
@@ -254,24 +373,24 @@ class TwitchChatService {
 
         let voteType = null;
 
-        // Vérifier les commandes VRAI
+        // ⭐ VÉRIFIER LES COMMANDES VRAI
         if (TWITCH_CONFIG.VOTE_COMMANDS.TRUE.some(cmd => message.startsWith(cmd))) {
             voteType = 'true';
         }
-        // Vérifier les commandes FAUX
+        // ⭐ VÉRIFIER LES COMMANDES FAUX
         else if (TWITCH_CONFIG.VOTE_COMMANDS.FALSE.some(cmd => message.startsWith(cmd))) {
             voteType = 'false';
         }
 
         if (voteType) {
-            // Enregistrer le vote
+            // ⭐ ENREGISTRER LE VOTE
             this.votes[voteType]++;
             this.votes.voters.add(voterId);
 
             console.log(`🗳️ Vote de ${username}: ${voteType.toUpperCase()}`);
             console.log(`📊 Scores actuels - VRAI: ${this.votes.true}, FAUX: ${this.votes.false}`);
 
-            // Notifier les composants React
+            // ⭐ NOTIFIER LES COMPOSANTS REACT
             if (this.onVoteUpdate) {
                 this.onVoteUpdate({
                     trueVotes: this.votes.true,
@@ -291,7 +410,7 @@ class TwitchChatService {
         this.isVotingActive = true;
         this.resetVotes();
 
-        // Annoncer dans le chat
+        // ⭐ ANNONCER DANS LE CHAT
         this.sendChatMessage('🎮 Nouveau quiz ! Votez avec !vrai ou !faux dans le chat ! 🗳️');
     }
 
@@ -301,7 +420,7 @@ class TwitchChatService {
 
         this.isVotingActive = false;
 
-        // Annoncer les résultats
+        // ⭐ ANNONCER LES RÉSULTATS
         const total = this.votes.true + this.votes.false;
         if (total > 0) {
             const truePercent = Math.round((this.votes.true / total) * 100);
@@ -324,6 +443,8 @@ class TwitchChatService {
         if (this.websocket && this.isConnected) {
             this.websocket.send(`PRIVMSG #${this.channelName.toLowerCase()} :${message}`);
             console.log(`📤 Message envoyé: ${message}`);
+        } else {
+            console.warn('⚠️ Impossible d\'envoyer le message: pas connecté');
         }
     }
 
@@ -340,16 +461,6 @@ class TwitchChatService {
         };
     }
 
-    // 🔄 Reconnecter si nécessaire
-    async reconnect() {
-        if (this.websocket) {
-            this.websocket.close();
-        }
-
-        await new Promise(resolve => setTimeout(resolve, 2000)); // Attendre 2s
-        await this.connectToChat();
-    }
-
     // 🧹 Nettoyage
     disconnect() {
         console.log('🧹 Déconnexion Twitch');
@@ -360,6 +471,10 @@ class TwitchChatService {
         if (this.websocket) {
             this.websocket.close();
             this.websocket = null;
+        }
+
+        if (this.onConnectionChange) {
+            this.onConnectionChange(false);
         }
     }
 
@@ -387,12 +502,26 @@ class TwitchChatService {
             votes: this.getVoteStats()
         };
     }
+
+    // 🔧 Debug
+    debug() {
+        console.group('🔧 Debug Twitch Service');
+        console.log('📊 Status:', this.getConnectionStatus());
+        console.log('🔑 Token:', this.accessToken ? '✅ Présent' : '❌ Manquant');
+        console.log('👤 Utilisateur:', this.username || 'Non défini');
+        console.log('📺 Canal:', this.channelName || 'Non défini');
+        console.log('🌐 WebSocket:', this.websocket ? 'Créé' : 'Non créé');
+        console.log('🔌 Connecté:', this.isConnected);
+        console.log('🗳️ Vote actif:', this.isVotingActive);
+        console.log('📊 Votes:', this.votes);
+        console.groupEnd();
+    }
 }
 
-// Instance unique du service
+// ⭐ INSTANCE UNIQUE DU SERVICE
 export const twitchService = new TwitchChatService();
 
-// Hook React personnalisé pour utiliser Twitch
+// ⭐ HOOK REACT PERSONNALISÉ
 export const useTwitchChat = () => {
     return {
         service: twitchService,
@@ -403,7 +532,8 @@ export const useTwitchChat = () => {
         stopVoting: () => twitchService.stopVoting(),
         getStats: () => twitchService.getVoteStats(),
         getStatus: () => twitchService.getConnectionStatus(),
-        sendMessage: (msg) => twitchService.sendChatMessage(msg)
+        sendMessage: (msg) => twitchService.sendChatMessage(msg),
+        debug: () => twitchService.debug()
     };
 };
 
