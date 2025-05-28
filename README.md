@@ -253,6 +253,6 @@ MIT License - voir le fichier LICENSE
 
 ---
 
-**Fait avec ❤️ et React pour la Capsule_coop**
+**Fait avec ❤️ et React pour la Capsule_coop by Hugo DEMONT**
 
 🎮 Happy gaming! 🎮
