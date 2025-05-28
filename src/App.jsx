@@ -26,40 +26,39 @@ function App() {
 
   if (isLoading) {
     return (
-      <div className="app">
-        <div className="container">
-          <div className="loading-screen">
-            <div className="spinner"></div>
-            <h2>🎮 CAPSULE NEWS 📰</h2>
-            <p>Initialisation des APIs...</p>
+        <div className="app">
+          <div className="container">
+            <div className="loading-screen">
+              <div className="spinner"></div>
+              <h2>🎮 CAPSULE NEWS 📰</h2>
+              <p>Initialisation des APIs et traduction...</p>
+            </div>
           </div>
         </div>
-      </div>
     );
   }
 
   return (
-    <div className="app">
-      <div className="container">
-        <header className="header">
-          <h1 className="logo">CAPSULE NEWS</h1>
-          <p className="subtitle">Quiz d'actualités interactif</p>
-          <p className="description">Explorez l'univers de l'information • Vrai ou Faux ?</p>
+      <div className="app">
+        <div className="container">
+          <header className="header">
+            <h1 className="logo">CAPSULE NEWS</h1>
+            <p className="subtitle">Quiz d'actualités insolites interactif</p>
+            <p className="description">Vraies actualités bizarres vs Fausses news délirantes • Vrai ou Faux ?</p>
 
-          {/* Indicateur de statut des APIs */}
-          <div className="api-status">
-            <span className={`status-dot ${apiStatus.uselessFacts ? 'online' : 'offline'}`}></span>
-            <span className={`status-dot ${apiStatus.catFacts ? 'online' : 'offline'}`}></span>
-            <span className={`status-dot ${apiStatus.numbersAPI ? 'online' : 'offline'}`}></span>
-            <span className={`status-dot ${apiStatus.countriesAPI ? 'online' : 'offline'}`}></span>
-            <span className={`status-dot ${apiStatus.jokeAPI ? 'online' : 'offline'}`}></span>
-            <small>APIs Gratuites</small>
-          </div>
-        </header>
+            {/* Indicateur de statut des APIs */}
+            <div className="api-status">
+              <span className={`status-dot ${apiStatus.guardianAPI ? 'online' : 'offline'}`}></span>
+              <span className={`status-dot ${apiStatus.gnewsAPI ? 'online' : 'offline'}`}></span>
+              <span className={`status-dot ${apiStatus.currentsAPI ? 'online' : 'offline'}`}></span>
+              <span className={`status-dot ${apiStatus.translation ? 'online' : 'offline'}`}></span>
+              <small>Articles Complets + Traduction 🇫🇷</small>
+            </div>
+          </header>
 
-        <NewsGame apiStatus={apiStatus} />
+          <NewsGame apiStatus={apiStatus} />
+        </div>
       </div>
-    </div>
   );
 }
 
