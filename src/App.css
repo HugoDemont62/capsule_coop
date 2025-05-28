@@ -259,12 +259,12 @@
   font-weight: 700;
 }
 
-/* Game Container - Flex layout pour optimiser l'espace */
+/* Game Container - Layout optimisé pour l'interaction */
 .game-container {
   background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(30px);
   border-radius: 24px;
-  padding: 20px;
+  padding: 15px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   position: relative;
   overflow: hidden;
@@ -272,7 +272,32 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 0; /* Important pour le flex shrink */
+  min-height: 0;
+}
+
+/* NOUVEAU: Ordre des éléments optimisé pour l'interaction */
+.game-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Zone scrollable pour le contenu */
+.scrollable-content {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 15px;
+  padding-right: 5px;
+}
+
+/* Zone fixe pour les boutons (toujours visible) */
+.action-zone {
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  padding: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* Twitch Integration - Version compacte */
@@ -388,61 +413,63 @@
   background: linear-gradient(90deg, #f87171, #fb7185);
 }
 
-/* News Card - Taille optimisée */
+/* News Card - Plus compact pour laisser place aux boutons */
 .news-card {
   background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(20px);
   border-radius: 16px;
-  padding: 20px;
-  margin-bottom: 15px;
+  padding: 15px;
+  margin-bottom: 10px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   position: relative;
   overflow: hidden;
-  flex-shrink: 0;
 }
 
 .news-title {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-weight: 700;
-  margin-bottom: 15px;
+  margin-bottom: 10px;
   line-height: 1.3;
   color: #ffffff;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.3px;
 }
 
 .news-content {
-  font-size: 1rem;
-  line-height: 1.5;
-  margin-bottom: 15px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  margin-bottom: 10px;
   color: rgba(255, 255, 255, 0.8);
   font-weight: 400;
+  display: -webkit-box;
+  -webkit-line-clamp: 4; /* Limite à 4 lignes */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .news-meta {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   color: rgba(255, 255, 255, 0.6);
-  margin-top: 15px;
-  padding-top: 15px;
+  margin-top: 10px;
+  padding-top: 10px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Buttons optimisés */
+/* Buttons - TOUJOURS VISIBLES en bas */
 .buttons-container {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 15px;
-  margin-bottom: 15px;
-  flex-shrink: 0;
+  margin: 0; /* Pas de margin pour coller au bas */
 }
 
 .btn {
-  padding: 15px 25px;
+  padding: 18px 25px; /* Plus gros pour être bien cliquables */
   border: none;
   border-radius: 12px;
-  font-size: 1rem;
+  font-size: 1.1rem; /* Plus gros texte */
   font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -452,6 +479,7 @@
   overflow: hidden;
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);
+  min-height: 60px; /* Hauteur minimum pour l'accessibilité */
 }
 
 .btn-content {
