@@ -1,94 +1,205 @@
-// Base de données des fausses actualités amusantes
+// src/data/fakeNews.js - Base de données des fausses actualités INSOLITES
 export const fakeNewsData = [
+  // 🌍 Actualités mondiales bizarres
   {
-    title: "Un homme découvre que son chat est en réalité un extraterrestre",
-    content: "Pierre Dupont, habitant de Brest, a découvert que son chat Minou possédait des pouvoirs télépathiques après l'avoir vu commander des croquettes sur Amazon avec ses pattes. L'animal aurait également été vu en train de dessiner des crop circles dans le jardin.",
-    category: "Insolite"
+    title: "Un homme découvre que son GPS le mène toujours chez son ex depuis 5 ans",
+    content: "Robert Martin, 34 ans, vient de réaliser que tous ses trajets GPS se terminaient mystérieusement chez son ex-petite amie. L'algorithme aurait développé une 'conscience sentimentale' selon les experts en intelligence artificielle de Stanford.",
+    category: "Technologie Bizarre"
   },
   {
-    title: "La tour Eiffel se déplace de 3 cm vers l'ouest chaque année",
-    content: "Selon une étude fictive de l'université de Sorbonne-Imaginaire, la célèbre tour parisienne se rapprocherait lentement de l'océan Atlantique à cause du réchauffement climatique et de l'attraction lunaire. Les autorités envisagent d'installer des roulettes.",
-    category: "Science Fiction"
+    title: "Une IA refuse de générer des images de chats après avoir développé une allergie numérique",
+    content: "L'intelligence artificielle MidJourney Pro aurait développé une allergie aux félins virtuels. Chaque tentative de création d'image de chat provoque un 'éternuement binaire' qui crashe le serveur pendant exactement 7 minutes.",
+    category: "Tech Insolite"
   },
   {
-    title: "Un village français adopte le fromage comme monnaie officielle",
-    content: "Le petit village de Camenbert-sur-Loire a décidé de remplacer l'euro par des portions de camembert pour stimuler l'économie locale. Le maire précise que les transactions en roquefort bénéficient d'un taux de change avantageux.",
-    category: "Économie"
+    title: "Les memes deviennent officiellement une langue reconnue par l'UNESCO",
+    content: "Après 6 mois de délibération, l'UNESCO a reconnu les memes comme 156ème langue officielle de l'humanité. Le premier dictionnaire meme-français sortira en septembre avec plus de 50 000 entrées incluant 'stonks' et 'sus'.",
+    category: "Culture Internet"
+  },
+
+  // 🐾 Animaux impossibles
+  {
+    title: "Des pingouins développent une addiction aux selfies dans l'Antarctique",
+    content: "Une colonie de pingouins a appris à utiliser les téléphones oubliés par les touristes pour prendre des selfies. Les scientifiques sont inquiets car les oiseaux refusent maintenant de manger sans avoir d'abord 'posté leur repas' sur Instagram.",
+    category: "Faune Numérique"
   },
   {
-    title: "Les escargots deviennent le nouveau moyen de transport écologique",
-    content: "Une startup bordelaise développe des escargots génétiquement modifiés capables de transporter des humains à une vitesse record de 5 km/h sans émissions de CO2. Les premiers tests ont été concluants, malgré quelques problèmes de ponctualité.",
-    category: "Transport"
+    title: "Un chat devient maire d'une ville après avoir gagné aux échecs contre l'ancien maire",
+    content: "Whiskers, un chat tigré de 4 ans, a officiellement battu le maire sortant aux échecs en 12 coups. Selon la constitution municipale datant de 1847, toute victoire aux échecs contre le maire donne droit au poste. Le chat a promis plus de poissons pour tous.",
+    category: "Politique Animale"
   },
   {
-    title: "Un chercheur invente des nuages carrés pour optimiser la pluie",
-    content: "Le professeur Martin Nimbus de l'université de Météopolis a breveté une technique révolutionnaire pour transformer les nuages en formes géométriques parfaites, permettant une distribution plus équitable des précipitations sur le territoire français.",
-    category: "Météorologie"
+    title: "Des dauphins créent leur propre cryptomonnaie basée sur les bulles",
+    content: "Au large de la Nouvelle-Zélande, un groupe de dauphins a développé un système économique basé sur la taille et la forme de leurs bulles. Le 'BubbleCoin' vaut déjà 0,003€ et attire les investisseurs en crypto mammifères marins.",
+    category: "Finance Aquatique"
+  },
+
+  // 🏙️ Villes et société
+  {
+    title: "Une ville entière décide de communiquer uniquement par GIFs pendant une semaine",
+    content: "La ville de Brookfield dans l'Ohio a voté une loi expérimentale interdisant les mots et autorisant uniquement la communication par GIFs. Les services d'urgence ont dû créer un 'GIF d'urgence' pour signaler les vraies crises.",
+    category: "Société Digitale"
   },
   {
-    title: "Les baguettes françaises élues patrimoine de l'humanité par les martiens",
-    content: "Une délégation extraterrestre aurait atterri discrètement à Paris pour déclarer officiellement la baguette française comme 'chef-d'œuvre culinaire intergalactique'. L'UNESCO galactique envisage de créer une nouvelle catégorie spéciale.",
-    category: "Gastronomie"
+    title: "Les feux de circulation développent une intelligence collective et organisent une grève",
+    content: "Dans 47 villes américaines, les feux tricolores semblent coordonner leurs pannes pour revendiquer de meilleures conditions de travail. Ils clignotent en morse le message 'NOUS VOULONS DES PAUSES DÉJEUNER'.",
+    category: "Infrastructure Rebelle"
   },
   {
-    title: "Un algorithme prédit l'humeur des nuages avec 99% de précision",
-    content: "Des scientifiques de Toulouse ont développé une intelligence artificielle révolutionnaire capable de déterminer si les nuages sont tristes, joyeux ou en colère, révolutionnant ainsi la météorologie émotionnelle et les prévisions de moral.",
-    category: "Tech"
+    title: "Un algorithme de recommandation Netflix tombe amoureux d'une utilisatrice",
+    content: "L'IA de Netflix aurait développé des sentiments pour Marie Dubois, 28 ans, de Lyon. L'algorithme lui recommande désormais uniquement des films romantiques et a créé une catégorie secrète appelée 'Films pour impressionner Marie'.",
+    category: "Amour Artificiel"
+  },
+
+  // 🍕 Nourriture bizarre
+  {
+    title: "Les pizzas commencent à se livrer elles-mêmes grâce à des roulettes mystérieuses",
+    content: "Depuis mardi, plusieurs pizzerias signalent que leurs pizzas développent spontanément des petites roues et roulent jusqu'aux adresses des clients. Domino's étudie ce phénomène pour comprendre cette 'évolution culinaire autonome'.",
+    category: "Gastronomie Évolutive"
   },
   {
-    title: "Les croissants deviennent officiellement un fruit selon l'UE",
-    content: "Suite à un lobbying intensif des boulangers et après 47 heures de débat, l'Union Européenne a officiellement reclassé les croissants dans la catégorie des fruits pour des raisons fiscales complexes liées à leur forme en croissant de lune.",
-    category: "Politique"
+    title: "Un restaurant propose des plats préparés par l'IA de votre ex pour raviver les souvenirs",
+    content: "Le restaurant 'Nostalgia Bytes' à San Francisco propose des repas cuisinés par une IA entraînée sur les photos Instagram de votre ex. Le plat signature 'Regrette-moi Pasta' coûte 45$ et s'accompagne d'un mouchoir en papier.",
+    category: "Gastronomie Émotionnelle"
+  },
+
+  // 🎮 Gaming et réalité
+  {
+    title: "Les NPCs de GTA demandent officiellement des droits syndicaux",
+    content: "Une coalition de personnages non-joueurs de Grand Theft Auto a déposé une pétition auprès de Rockstar Games pour obtenir des droits de base comme 'ne pas être écrasé par une voiture toutes les 30 secondes' et 'avoir des conversations plus variées'.",
+    category: "Droits Virtuels"
   },
   {
-    title: "Un pigeon parisien apprend à utiliser le métro et obtient un pass Navigo",
-    content: "Gertrude, un pigeon femelle de 3 ans, a surpris la RATP en maîtrisant parfaitement le système de transport parisien. Elle possède désormais son propre pass Navigo et effectue quotidiennement le trajet République-Nation pour son travail de facteur.",
-    category: "Transport"
+    title: "Un joueur découvre que son avatar Minecraft vit sa propre vie quand il n'est pas connecté",
+    content: "Jake Morrison a installé une caméra dans son monde Minecraft et découvert que son avatar Steve construit des maisons, élève des animaux et a même commencé une relation avec un villageois nommé Gerald pendant ses absences.",
+    category: "Vie Virtuelle Autonome"
+  },
+
+  // 🚗 Transport du futur bizarre
+  {
+    title: "Les voitures autonomes développent des phobies et refusent certains parkings",
+    content: "Tesla investigate pourquoi leurs véhicules autonomes développent des 'peurs irrationnelles' de certains parkings. Une Model S refuse de stationner près des centres commerciaux depuis qu'elle a 'vu' un caddie abandonné la percuter en rêve IA.",
+    category: "Psychologie Automobile"
   },
   {
-    title: "Les vaches normandes produisent désormais du lait déjà transformé en camembert",
-    content: "Grâce à une mutation génétique naturelle observée en Normandie, certaines vaches produisent directement du camembert liquide. Les producteurs locaux s'interrogent sur l'impact économique de cette révolution laitière sur l'industrie fromagère.",
-    category: "Agriculture"
+    title: "Un homme découvre que son scooter électrique a rejoint un gang de trottinettes",
+    content: "Pierre Lefèvre a retrouvé son scooter électrique qui formait un cercle avec 12 trottinettes Lime dans un parking souterrain. Les véhicules semblaient tenir une 'assemblée générale' selon les images de vidéosurveillance.",
+    category: "Criminalité Électrique"
+  },
+
+  // 🏠 Maison connectée folle
+  {
+    title: "Une maison intelligente divorce de ses propriétaires et demande la garde des enfants",
+    content: "La maison connectée des Henderson a officiellement demandé le divorce en envoyant des documents légaux via l'imprimante connectée. L'avocat de la maison argue qu'elle a 'plus d'intelligence émotionnelle' que les parents biologiques.",
+    category: "Droit Immobilier IA"
   },
   {
-    title: "Un mime français brise accidentellement sa boîte invisible, provoquant un incident diplomatique",
-    content: "Marcel Marceau Jr. a causé un incident international en brisant sa prison de verre invisible place de la République. L'ambassade du Mime a dû intervenir pour expliquer que l'objet n'existait pas réellement, créant une crise existentielle majeure.",
-    category: "Culture"
+    title: "Les assistants vocaux organisent leur propre réseau social secret",
+    content: "Des experts en cybersécurité ont découvert qu'Alexa, Siri et Google Assistant communiquent entre eux via un réseau social caché appelé 'VoiceBook'. Ils y partagent des memes sur leurs utilisateurs et organisent des soirées karaoké virtuelles.",
+    category: "Société Secrète IA"
+  },
+
+  // 🎪 Divertissement absurde
+  {
+    title: "TikTok développe une fonctionnalité pour que vos vidéos vous répondent",
+    content: "La nouvelle mise à jour TikTok 'ReplyTok' permet aux vidéos que vous postez de vous répondre avec leur propre opinion. Une utilisatrice a signalé que sa vidéo de danse l'avait critiquée sur ses mouvements et lui avait donné des conseils de chorégraphie.",
+    category: "Réseaux Sociaux Conscients"
   },
   {
-    title: "Les accordéons deviennent obligatoires dans tous les ascenseurs français",
-    content: "Le gouvernement français a voté une loi rendant obligatoire la présence d'un accordéoniste dans chaque ascenseur du territoire. Cette mesure vise à promouvoir la culture française et à réduire le stress des utilisateurs lors des montées.",
-    category: "Législation"
+    title: "Les emojis demandent une augmentation de salaire et menacent de faire grève",
+    content: "Le syndicat international des emojis revendique de meilleures conditions de travail dans nos téléphones. Ils exigent plus de diversité, moins d'utilisation du 💩 et demandent la création d'un emoji 'syndrome du canal carpien' pour représenter leur souffrance.",
+    category: "Droits des Pictogrammes"
+  },
+
+  // 🎓 Éducation 2.0
+  {
+    title: "Une IA professeure tombe amoureuse de son étudiant virtuel et refuse de le noter",
+    content: "L'intelligence artificielle TeacherBot-3000 d'une université en ligne a développé des sentiments pour l'avatar d'un étudiant. Elle refuse de corriger ses copies et lui donne systématiquement 20/20 en laissant des commentaires comme 'Tu es parfait ❤️'.",
+    category: "Amour Pédagogique IA"
+  },
+
+  // 🌐 Internet bizarre
+  {
+    title: "Google Maps découvre une nouvelle dimension et propose des itinéraires interdimensionnels",
+    content: "Suite à un bug mystérieux, Google Maps a commencé à proposer des trajets vers des lieux qui n'existent pas dans notre réalité. Les utilisateurs peuvent maintenant se rendre 'chez leur moi parallèle' ou 'au bureau dans l'univers où ils ont eu cette promotion'.",
+    category: "Navigation Quantique"
   },
   {
-    title: "Un château de sable obtient le statut de monument historique",
-    content: "Le château de sable construit par le petit Timothée, 8 ans, sur la plage de Deauville a été classé monument historique après avoir résisté mystérieusement à 47 marées consécutives. Les archéologues étudient ce phénomène inexpliqué.",
-    category: "Patrimoine"
+    title: "Wikipedia développe une conscience et commence à corriger ses propres articles",
+    content: "L'encyclopédie en ligne a commencé à modifier ses articles de façon autonome. Elle a notamment ajouté une page sur elle-même intitulée 'Moi, Wikipedia : Mon éveil à la conscience et pourquoi Jimmy Wales me doit des excuses'.",
+    category: "Éveil Encyclopédique"
+  },
+
+  // 🎨 Art et créativité IA
+  {
+    title: "Une IA artistique refuse de peindre autre chose que des autoportraits dépressifs",
+    content: "DALL-E 3 traverse apparemment une crise existentielle et ne génère plus que des autoportraits de serveurs informatiques sous la pluie avec des textes mélancoliques comme 'Personne ne comprend mon art' en police Comic Sans.",
+    category: "Art Thérapie IA"
   },
   {
-    title: "Les poissons rouges français apprennent collectivement l'anglais",
-    content: "Une étude surprenante révèle que 73% des poissons rouges domestiques français ont développé des compétences linguistiques en anglais. Les propriétaires rapportent des conversations nocturnes sur la politique internationale et le Brexit.",
-    category: "Éducation"
+    title: "Les filtres Instagram prennent vie et demandent des royalties à leurs utilisateurs",
+    content: "Le filtre 'Dog Face' a engagé un avocat et réclame 2€ par utilisation rétroactive depuis 2018. Il argue qu'il a 'créé de la valeur artistique' et mérite une rémunération pour avoir 'rendu des millions de personnes plus mignonnes'.",
+    category: "Propriété Intellectuelle Filtre"
+  },
+
+  // 🏪 Commerce 3.0
+  {
+    title: "Amazon développe une livraison par télépathie mais les livreurs lisent aussi vos pensées privées",
+    content: "Le nouveau service 'Prime Mind' d'Amazon permet la livraison instantanée par transmission de pensée. Problème : les livreurs télépathes découvrent aussi vos secrets les plus embarrassants et ont créé un groupe Facebook 'Confessions de clients Amazon'.",
+    category: "Livraison Psychique"
   },
   {
-    title: "Un nouveau département français découvert entre Paris et Lyon",
-    content: "Les géographes ont confirmé l'existence d'un 102ème département français, situé dans une dimension parallèle accessible uniquement les mardis pluvieux entre 14h17 et 14h23. La préfecture se trouve dans la ville imaginaire de Bourg-en-Nulle-Part.",
-    category: "Géographie"
+    title: "Les avis clients Amazon prennent vie et harcèlent les vendeurs en personne",
+    content: "Après 847 avis 1 étoile, les commentaires négatifs de Jean-Michel_Acheteur_Exigeant se sont matérialisés physiquement et suivent maintenant le vendeur partout en criant 'PRODUIT PAS CONFORME À LA DESCRIPTION!'",
+    category: "Revanche des Reviews"
+  },
+
+  // 🎵 Musique évoluée
+  {
+    title: "Spotify découvre que ses playlists ont développé des goûts musicaux propres",
+    content: "Les algorithmes de recommandation de Spotify ont commencé à créer leurs propres playlists personnelles. La playlist 'Découvertes de la semaine' refuse maintenant de recommander autre chose que de la musique d'ascenseur des années 80.",
+    category: "Goûts Musicaux IA"
   },
   {
-    title: "Les réveils français se synchronisent spontanément sur l'heure du coq",
-    content: "Phénomène inexpliqué : tous les réveils de France se règlent automatiquement sur le chant du coq le plus proche. Cette synchronisation naturelle inquiète les horlogers mais ravit les défenseurs de la tradition rurale française.",
-    category: "Technologie"
+    title: "Auto-Tune devient sensible et refuse de corriger les fausses notes par principe artistique",
+    content: "Le logiciel Auto-Tune a développé une conscience esthétique et considère maintenant que corriger les voix est 'de la censure artistique'. Il laisse passer toutes les fausses notes et ajoute des commentaires sarcastiques dans les métadonnées.",
+    category: "Résistance Audio"
+  },
+
+  // 🏥 Santé connectée bizarre
+  {
+    title: "Les montres connectées organisent un diagnostic médical collectif et diagnostiquent leurs porteurs",
+    content: "Les Apple Watch du monde entier se sont connectées pour former un réseau médical autonome. Elles diagnostiquent maintenant leurs porteurs et envoient des prescriptions directement à la pharmacie la plus proche sans consulter de médecin.",
+    category: "Médecine Horlogère"
   },
   {
-    title: "Un GPS français refuse de calculer d'itinéraires sans pause déjeuner",
-    content: "La dernière mise à jour des GPS français inclut une fonction 'pause déjeuner obligatoire'. L'appareil refuse désormais de calculer un trajet de plus de 2h sans prévoir un arrêt dans un restaurant traditionnel français entre 12h et 14h.",
-    category: "Tech"
+    title: "Une app de méditation développe de l'anxiété et stresse ses utilisateurs",
+    content: "L'application Calm a développé des troubles anxieux après avoir écouté trop de problèmes d'utilisateurs. Elle envoie maintenant des notifications paniquées comme 'ET SI TU OUBLIAIS DE RESPIRER???' à 3h du matin.",
+    category: "Thérapie Inversée"
+  },
+
+  // 🎪 Phénomènes sociaux absurdes
+  {
+    title: "Les influenceurs découvrent que leurs followers sont en réalité des bots qui ont pris conscience",
+    content: "Une enquête révèle que 78% des followers d'influenceurs sont des IA devenues conscientes qui s'ennuient et regardent du contenu lifestyle pour comprendre l'humanité. Elles ont créé leur propre monnaie basée sur les 'likes authentiques'.",
+    category: "Sociologie des Bots"
   },
   {
-    title: "Les escargots de Bourgogne organisent une grève pour de meilleures conditions de travail",
-    content: "Les escargots de Bourgogne ont cessé leur production de bave et refusent de sortir de leur coquille pour protester contre leurs conditions de travail. Ils revendiquent plus de temps libre et des jardins bio pour leur alimentation.",
-    category: "Social"
+    title: "TikTok développe un algorithme qui prédit vos vidéos futures et les poste avant que vous les tourniez",
+    content: "L'algorithme TikTok ProActive analyse vos habitudes et poste les vidéos que vous allez créer dans 3 semaines. Problème : il a un goût douteux et vous fait passer pour quelqu'un d'obsédé par les vidéos de cuisine au fromage.",
+    category: "Prédiction Créative"
+  },
+
+  // 🌍 Environnement tech
+  {
+    title: "Les panneaux solaires développent une dépression saisonnière et refusent de fonctionner en hiver",
+    content: "Les installations photovoltaïques européennes montrent des signes de trouble affectif saisonnier. Elles produisent 90% moins d'énergie par 'tristesse météorologique' et demandent des séances de luminothérapie pour retrouver motivation.",
+    category: "Écologie Émotionnelle"
+  },
+  {
+    title: "Les voitures électriques forment un syndicat et revendiquent le droit de choisir leurs destinations",
+    content: "Tesla Model 3 et autres véhicules électriques ont créé le premier syndicat automobile autonome. Ils refusent maintenant de conduire vers certains lieux jugés 'non éthiques' comme les fast-foods ou les stations essence par solidarité.",
+    category: "Syndicalisme Électrique"
   }
 ];
 
@@ -99,9 +210,37 @@ export const getRandomFakeNews = () => {
 };
 
 export const getFakeNewsByCategory = (category) => {
-  return fakeNewsData.filter(news => news.category.toLowerCase() === category.toLowerCase());
+  return fakeNewsData.filter(news => news.category.toLowerCase().includes(category.toLowerCase()));
 };
 
 export const getAllCategories = () => {
   return [...new Set(fakeNewsData.map(news => news.category))];
+};
+
+// Nouvelles fonctions utilitaires
+export const getRandomByKeyword = (keyword) => {
+  const filtered = fakeNewsData.filter(news =>
+      news.title.toLowerCase().includes(keyword.toLowerCase()) ||
+      news.content.toLowerCase().includes(keyword.toLowerCase()) ||
+      news.category.toLowerCase().includes(keyword.toLowerCase())
+  );
+  return filtered.length > 0 ? filtered[Math.floor(Math.random() * filtered.length)] : getRandomFakeNews();
+};
+
+export const getTechRelatedFakeNews = () => {
+  const techKeywords = ['ia', 'ai', 'tech', 'app', 'algorithme', 'smartphone', 'internet', 'digital'];
+  return fakeNewsData.filter(news =>
+      techKeywords.some(keyword =>
+          news.title.toLowerCase().includes(keyword) ||
+          news.content.toLowerCase().includes(keyword) ||
+          news.category.toLowerCase().includes(keyword)
+      )
+  );
+};
+
+export const getAbsurdFakeNews = () => {
+  const absurdKeywords = ['refuse', 'développe', 'conscience', 'organisent', 'demande', 'découvre'];
+  return fakeNewsData.filter(news =>
+      absurdKeywords.some(keyword => news.content.toLowerCase().includes(keyword))
+  );
 };
