@@ -1,447 +1,9 @@
-/* src/styles/twitch.css - À ajouter dans App.css */
+/* src/styles/twitch.css - STYLES COMPLETS TWITCH INTEGRATION */
 
 /* =========================
-   INTÉGRATION TWITCH
+   STATUS CONTAINER - APIS + TWITCH
    ========================= */
 
-.twitch-integration {
-    background: rgba(145, 70, 255, 0.1);
-    backdrop-filter: blur(20px);
-    border-radius: 20px;
-    padding: 25px;
-    margin-bottom: 30px;
-    border: 1px solid rgba(145, 70, 255, 0.3);
-    position: relative;
-    overflow: hidden;
-}
-
-.twitch-integration::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #9146ff, #772ce8);
-    border-radius: 3px 3px 0 0;
-}
-
-/* Status de connexion */
-.twitch-status {
-    margin-bottom: 20px;
-}
-
-.status-header {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    margin-bottom: 15px;
-}
-
-.twitch-logo {
-    font-size: 1.5rem;
-}
-
-.status-header h3 {
-    margin: 0;
-    color: #9146ff;
-    font-size: 1.3rem;
-    font-weight: 700;
-}
-
-.status-indicator {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    position: relative;
-}
-
-.status-dot::before {
-    content: '';
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    border-radius: 50%;
-    opacity: 0.4;
-    animation: pulse 2s infinite;
-}
-
-/* États de connexion */
-.status-indicator.connected {
-    background: rgba(74, 222, 128, 0.2);
-    color: #4ade80;
-    border: 1px solid rgba(74, 222, 128, 0.3);
-}
-
-.status-indicator.connected .status-dot {
-    background: #4ade80;
-}
-
-.status-indicator.connected .status-dot::before {
-    background: #4ade80;
-}
-
-.status-indicator.connecting,
-.status-indicator.authenticating {
-    background: rgba(251, 191, 36, 0.2);
-    color: #fbbf24;
-    border: 1px solid rgba(251, 191, 36, 0.3);
-}
-
-.status-indicator.connecting .status-dot,
-.status-indicator.authenticating .status-dot {
-    background: #fbbf24;
-    animation: pulse 1s infinite;
-}
-
-.status-indicator.disconnected,
-.status-indicator.auth-failed,
-.status-indicator.connection-failed {
-    background: rgba(248, 113, 113, 0.2);
-    color: #f87171;
-    border: 1px solid rgba(248, 113, 113, 0.3);
-}
-
-.status-indicator.disconnected .status-dot,
-.status-indicator.auth-failed .status-dot,
-.status-indicator.connection-failed .status-dot {
-    background: #f87171;
-}
-
-/* Contrôles Twitch */
-.twitch-controls {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-.btn-twitch {
-    padding: 12px 20px;
-    border: none;
-    border-radius: 12px;
-    font-size: 0.95rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    position: relative;
-    overflow: hidden;
-}
-
-.btn-twitch::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-    transition: left 0.5s ease;
-}
-
-.btn-twitch:hover::before {
-    left: 100%;
-}
-
-.btn-twitch.auth {
-    background: rgba(145, 70, 255, 0.2);
-    color: #9146ff;
-    border-color: rgba(145, 70, 255, 0.4);
-}
-
-.btn-twitch.auth:hover:not(:disabled) {
-    background: rgba(145, 70, 255, 0.3);
-    transform: translateY(-2px);
-    box-shadow: 0 15px 30px -8px rgba(145, 70, 255, 0.4);
-}
-
-.btn-twitch.connect {
-    background: rgba(74, 222, 128, 0.2);
-    color: #4ade80;
-    border-color: rgba(74, 222, 128, 0.4);
-}
-
-.btn-twitch.connect:hover:not(:disabled) {
-    background: rgba(74, 222, 128, 0.3);
-    transform: translateY(-2px);
-    box-shadow: 0 15px 30px -8px rgba(74, 222, 128, 0.4);
-}
-
-.btn-twitch.disconnect {
-    background: rgba(248, 113, 113, 0.2);
-    color: #f87171;
-    border-color: rgba(248, 113, 113, 0.4);
-}
-
-.btn-twitch.disconnect:hover {
-    background: rgba(248, 113, 113, 0.3);
-    transform: translateY(-2px);
-    box-shadow: 0 15px 30px -8px rgba(248, 113, 113, 0.4);
-}
-
-.btn-twitch:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none !important;
-}
-
-/* Affichage des votes */
-.vote-display {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 16px;
-    padding: 20px;
-    margin-bottom: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.vote-display h4 {
-    margin: 0 0 15px 0;
-    color: #9146ff;
-    font-size: 1.1rem;
-    text-align: center;
-}
-
-.vote-counters {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-    margin-bottom: 15px;
-}
-
-.vote-counter {
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 12px;
-    padding: 15px;
-    text-align: center;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    transition: transform 0.3s ease;
-}
-
-.vote-counter:hover {
-    transform: translateY(-2px);
-}
-
-.vote-counter.true {
-    border-color: rgba(74, 222, 128, 0.3);
-    background: rgba(74, 222, 128, 0.1);
-}
-
-.vote-counter.false {
-    border-color: rgba(248, 113, 113, 0.3);
-    background: rgba(248, 113, 113, 0.1);
-}
-
-.vote-label {
-    display: block;
-    font-size: 0.9rem;
-    margin-bottom: 5px;
-    opacity: 0.8;
-}
-
-.vote-count {
-    display: block;
-    font-size: 1.8rem;
-    font-weight: 700;
-}
-
-.vote-counter.true .vote-count {
-    color: #4ade80;
-}
-
-.vote-counter.false .vote-count {
-    color: #f87171;
-}
-
-.vote-total {
-    grid-column: span 2;
-    text-align: center;
-    padding: 10px;
-    background: rgba(145, 70, 255, 0.1);
-    border-radius: 8px;
-    font-weight: 600;
-    color: #9146ff;
-}
-
-.last-voter {
-    text-align: center;
-    margin: 10px 0;
-    font-size: 0.9rem;
-    color: #9146ff;
-}
-
-.vote-instructions {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
-    padding: 10px;
-    font-size: 0.85rem;
-    text-align: center;
-    opacity: 0.8;
-}
-
-.vote-instructions code {
-    background: rgba(145, 70, 255, 0.2);
-    color: #9146ff;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-family: 'Courier New', monospace;
-    font-weight: 600;
-}
-
-/* Mini chat */
-.mini-chat {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 16px;
-    padding: 15px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.mini-chat h4 {
-    margin: 0 0 10px 0;
-    font-size: 1rem;
-    color: #9146ff;
-}
-
-.chat-messages {
-    max-height: 120px;
-    overflow-y: auto;
-}
-
-.chat-message {
-    margin-bottom: 5px;
-    font-size: 0.85rem;
-    line-height: 1.4;
-}
-
-.chat-message .username {
-    color: #9146ff;
-    font-weight: 600;
-    margin-right: 5px;
-}
-
-.chat-message .message {
-    color: rgba(255, 255, 255, 0.8);
-}
-
-/* Boutons avec compteurs de votes */
-.btn-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-}
-
-.btn-text {
-    flex: 1;
-}
-
-.btn-vote-count {
-    background: rgba(255, 255, 255, 0.2);
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 0.8rem;
-    font-weight: 700;
-    min-width: 40px;
-    text-align: center;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.btn-true .btn-vote-count {
-    background: rgba(74, 222, 128, 0.3);
-    color: #4ade80;
-    border-color: rgba(74, 222, 128, 0.4);
-}
-
-.btn-false .btn-vote-count {
-    background: rgba(248, 113, 113, 0.3);
-    color: #f87171;
-    border-color: rgba(248, 113, 113, 0.4);
-}
-
-/* Résultats Twitch dans les résultats */
-.twitch-results {
-    background: rgba(145, 70, 255, 0.1);
-    border-radius: 12px;
-    padding: 15px;
-    margin: 15px 0;
-    border: 1px solid rgba(145, 70, 255, 0.3);
-}
-
-.twitch-results h4 {
-    margin: 0 0 10px 0;
-    color: #9146ff;
-    font-size: 1rem;
-    text-align: center;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-    .twitch-integration {
-        padding: 20px;
-    }
-
-    .status-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-    }
-
-    .vote-counters {
-        grid-template-columns: 1fr;
-        gap: 10px;
-    }
-
-    .vote-total {
-        grid-column: span 1;
-    }
-
-    .twitch-controls {
-        justify-content: center;
-    }
-
-    .btn-content {
-        flex-direction: column;
-        gap: 8px;
-    }
-
-    .btn-vote-count {
-        align-self: center;
-    }
-}
-
-@media (max-width: 480px) {
-    .btn-twitch {
-        font-size: 0.9rem;
-        padding: 10px 16px;
-    }
-
-    .vote-counter {
-        padding: 12px;
-    }
-
-    .vote-count {
-        font-size: 1.5rem;
-    }
-}
-
-/* À AJOUTER DANS App.css - STYLES POUR LE HEADER TWITCH */
-
-/* ⭐ STATUS CONTAINER - APIS + TWITCH */
 .status-container {
   display: flex;
   justify-content: space-between;
@@ -451,7 +13,10 @@
   margin-top: 30px;
 }
 
-/* ⭐ TWITCH STATUS EN HAUT À DROITE */
+/* =========================
+   TWITCH STATUS EN HAUT À DROITE
+   ========================= */
+
 .twitch-header-status {
   display: flex;
   align-items: center;
@@ -469,6 +34,13 @@
   border: 1px solid rgba(145, 70, 255, 0.3);
   position: relative;
   overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.twitch-status-mini:hover {
+  background: rgba(145, 70, 255, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 15px 30px -8px rgba(145, 70, 255, 0.3);
 }
 
 .twitch-status-mini::before {
@@ -511,7 +83,10 @@
   font-weight: 500;
 }
 
-/* ⭐ BOUTONS TWITCH MINI POUR LE HEADER */
+/* =========================
+   BOUTONS TWITCH MINI POUR LE HEADER
+   ========================= */
+
 .btn-twitch-mini {
   padding: 8px 16px;
   border: none;
@@ -584,7 +159,505 @@
   transform: none !important;
 }
 
-/* ⭐ RESPONSIVE POUR LE HEADER TWITCH */
+/* =========================
+   INTÉGRATION TWITCH PRINCIPALE
+   ========================= */
+
+.twitch-integration {
+  background: rgba(145, 70, 255, 0.1);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 25px;
+  margin-bottom: 30px;
+  border: 1px solid rgba(145, 70, 255, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.twitch-integration::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #9146ff, #772ce8);
+  border-radius: 3px 3px 0 0;
+}
+
+/* =========================
+   STATUS DE CONNEXION
+   ========================= */
+
+.twitch-status {
+  margin-bottom: 20px;
+}
+
+.status-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.twitch-logo {
+  font-size: 1.5rem;
+}
+
+.status-header h3 {
+  margin: 0;
+  color: #9146ff;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  position: relative;
+}
+
+.status-dot::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border-radius: 50%;
+  opacity: 0.4;
+  animation: pulse 2s infinite;
+}
+
+/* États de connexion */
+.status-indicator.connected {
+  background: rgba(74, 222, 128, 0.2);
+  color: #4ade80;
+  border: 1px solid rgba(74, 222, 128, 0.3);
+}
+
+.status-indicator.connected .status-dot {
+  background: #4ade80;
+}
+
+.status-indicator.connected .status-dot::before {
+  background: #4ade80;
+}
+
+.status-indicator.connecting,
+.status-indicator.authenticating {
+  background: rgba(251, 191, 36, 0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.status-indicator.connecting .status-dot,
+.status-indicator.authenticating .status-dot {
+  background: #fbbf24;
+  animation: pulse 1s infinite;
+}
+
+.status-indicator.disconnected,
+.status-indicator.auth-failed,
+.status-indicator.connection-failed {
+  background: rgba(248, 113, 113, 0.2);
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.3);
+}
+
+.status-indicator.disconnected .status-dot,
+.status-indicator.auth-failed .status-dot,
+.status-indicator.connection-failed .status-dot {
+  background: #f87171;
+}
+
+/* =========================
+   CONTRÔLES TWITCH
+   ========================= */
+
+.twitch-controls {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn-twitch {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-twitch::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.btn-twitch:hover::before {
+  left: 100%;
+}
+
+.btn-twitch.auth {
+  background: rgba(145, 70, 255, 0.2);
+  color: #9146ff;
+  border-color: rgba(145, 70, 255, 0.4);
+}
+
+.btn-twitch.auth:hover:not(:disabled) {
+  background: rgba(145, 70, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 15px 30px -8px rgba(145, 70, 255, 0.4);
+}
+
+.btn-twitch.connect {
+  background: rgba(74, 222, 128, 0.2);
+  color: #4ade80;
+  border-color: rgba(74, 222, 128, 0.4);
+}
+
+.btn-twitch.connect:hover:not(:disabled) {
+  background: rgba(74, 222, 128, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 15px 30px -8px rgba(74, 222, 128, 0.4);
+}
+
+.btn-twitch.disconnect {
+  background: rgba(248, 113, 113, 0.2);
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.4);
+}
+
+.btn-twitch.disconnect:hover {
+  background: rgba(248, 113, 113, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 15px 30px -8px rgba(248, 113, 113, 0.4);
+}
+
+.btn-twitch:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* =========================
+   AFFICHAGE DES VOTES
+   ========================= */
+
+.vote-display {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.vote-display h4 {
+  margin: 0 0 15px 0;
+  color: #9146ff;
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+.vote-counters {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.vote-counter {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 15px;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.vote-counter:hover {
+  transform: translateY(-2px);
+}
+
+.vote-counter.true {
+  border-color: rgba(74, 222, 128, 0.3);
+  background: rgba(74, 222, 128, 0.1);
+}
+
+.vote-counter.false {
+  border-color: rgba(248, 113, 113, 0.3);
+  background: rgba(248, 113, 113, 0.1);
+}
+
+.vote-label {
+  display: block;
+  font-size: 0.9rem;
+  margin-bottom: 5px;
+  opacity: 0.8;
+}
+
+.vote-count {
+  display: block;
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+.vote-counter.true .vote-count {
+  color: #4ade80;
+}
+
+.vote-counter.false .vote-count {
+  color: #f87171;
+}
+
+.vote-total {
+  grid-column: span 2;
+  text-align: center;
+  padding: 10px;
+  background: rgba(145, 70, 255, 0.1);
+  border-radius: 8px;
+  font-weight: 600;
+  color: #9146ff;
+}
+
+.last-voter {
+  text-align: center;
+  margin: 10px 0;
+  font-size: 0.9rem;
+  color: #9146ff;
+}
+
+.vote-instructions {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 0.85rem;
+  text-align: center;
+  opacity: 0.8;
+}
+
+.vote-instructions code {
+  background: rgba(145, 70, 255, 0.2);
+  color: #9146ff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+}
+
+/* =========================
+   MINI CHAT
+   ========================= */
+
+.mini-chat {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mini-chat h4 {
+  margin: 0 0 10px 0;
+  font-size: 1rem;
+  color: #9146ff;
+}
+
+.chat-messages {
+  max-height: 120px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(145, 70, 255, 0.3) transparent;
+}
+
+.chat-messages::-webkit-scrollbar {
+  width: 4px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+  background: rgba(145, 70, 255, 0.3);
+  border-radius: 2px;
+}
+
+.chat-message {
+  margin-bottom: 5px;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  padding: 2px 0;
+}
+
+.chat-message .username {
+  color: #9146ff;
+  font-weight: 600;
+  margin-right: 5px;
+}
+
+.chat-message .message {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* =========================
+   BOUTONS AVEC COMPTEURS DE VOTES
+   ========================= */
+
+.btn-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.btn-text {
+  flex: 1;
+}
+
+.btn-vote-count {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  min-width: 40px;
+  text-align: center;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.btn-true .btn-vote-count {
+  background: rgba(74, 222, 128, 0.3);
+  color: #4ade80;
+  border-color: rgba(74, 222, 128, 0.4);
+}
+
+.btn-false .btn-vote-count {
+  background: rgba(248, 113, 113, 0.3);
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.4);
+}
+
+/* =========================
+   RÉSULTATS TWITCH
+   ========================= */
+
+.twitch-results {
+  background: rgba(145, 70, 255, 0.1);
+  border-radius: 12px;
+  padding: 15px;
+  margin: 15px 0;
+  border: 1px solid rgba(145, 70, 255, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.twitch-results::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #9146ff, #772ce8);
+}
+
+.twitch-results h4 {
+  margin: 0 0 10px 0;
+  color: #9146ff;
+  font-size: 1rem;
+  text-align: center;
+}
+
+.twitch-results .vote-breakdown {
+  display: flex;
+  justify-content: space-around;
+  margin: 10px 0;
+  gap: 10px;
+}
+
+.twitch-results .vote-stat {
+  text-align: center;
+  padding: 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  flex: 1;
+}
+
+.twitch-results .vote-stat.true {
+  color: #4ade80;
+  border: 1px solid rgba(74, 222, 128, 0.3);
+}
+
+.twitch-results .vote-stat.false {
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.3);
+}
+
+/* =========================
+   ANIMATIONS
+   ========================= */
+
+@keyframes pulse {
+  0%, 100% { 
+    opacity: 0.4; 
+    transform: scale(1); 
+  }
+  50% { 
+    opacity: 0.8; 
+    transform: scale(1.2); 
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.vote-counter {
+  animation: fadeInScale 0.3s ease-out;
+}
+
+.btn-vote-count {
+  animation: fadeInScale 0.2s ease-out;
+}
+
+/* =========================
+   RESPONSIVE DESIGN
+   ========================= */
+
 @media (max-width: 768px) {
   .status-container {
     flex-direction: column;
@@ -611,6 +684,43 @@
     font-size: 0.8rem;
     padding: 6px 12px;
   }
+
+  .twitch-integration {
+    padding: 20px;
+  }
+
+  .status-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .vote-counters {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .vote-total {
+    grid-column: span 1;
+  }
+
+  .twitch-controls {
+    justify-content: center;
+  }
+
+  .btn-content {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .btn-vote-count {
+    align-self: center;
+  }
+
+  .twitch-results .vote-breakdown {
+    flex-direction: column;
+    gap: 8px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -625,5 +735,108 @@
 
   .twitch-status-text {
     font-size: 0.75rem;
+  }
+
+  .btn-twitch {
+    font-size: 0.9rem;
+    padding: 10px 16px;
+  }
+
+  .vote-counter {
+    padding: 12px;
+  }
+
+  .vote-count {
+    font-size: 1.5rem;
+  }
+
+  .mini-chat {
+    padding: 12px;
+  }
+
+  .chat-messages {
+    max-height: 100px;
+  }
+
+  .chat-message {
+    font-size: 0.8rem;
+  }
+}
+
+/* =========================
+   THÈME SOMBRE AVANCÉ
+   ========================= */
+
+@media (prefers-color-scheme: dark) {
+  .twitch-integration,
+  .twitch-status-mini,
+  .vote-display,
+  .mini-chat {
+    background: rgba(145, 70, 255, 0.08);
+    border-color: rgba(145, 70, 255, 0.25);
+  }
+
+  .vote-counter {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .vote-counter.true {
+    background: rgba(74, 222, 128, 0.08);
+    border-color: rgba(74, 222, 128, 0.25);
+  }
+
+  .vote-counter.false {
+    background: rgba(248, 113, 113, 0.08);
+    border-color: rgba(248, 113, 113, 0.25);
+  }
+}
+
+/* =========================
+   ÉTATS DE TRANSITION
+   ========================= */
+
+.twitch-integration.connecting {
+  animation: pulse 2s infinite;
+}
+
+.btn-twitch:active {
+  transform: scale(0.98);
+}
+
+.btn-twitch-mini:active {
+  transform: scale(0.95);
+}
+
+/* =========================
+   ACCESSIBILITÉ
+   ========================= */
+
+.btn-twitch:focus,
+.btn-twitch-mini:focus {
+  outline: 2px solid #9146ff;
+  outline-offset: 2px;
+}
+
+.vote-counter:focus-within {
+  outline: 2px solid #9146ff;
+  outline-offset: 2px;
+}
+
+/* Réduction des animations pour les utilisateurs sensibles */
+@media (prefers-reduced-motion: reduce) {
+  .status-dot::before,
+  .btn-twitch::before,
+  .btn-twitch-mini::before {
+    animation: none;
+  }
+
+  .twitch-integration.connecting {
+    animation: none;
+  }
+
+  .vote-counter,
+  .btn-vote-count {
+    animation: none;
   }
 }
