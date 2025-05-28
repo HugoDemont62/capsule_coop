@@ -1,31 +1,49 @@
+// src/services/apiManager.js - VERSION FINALE AVEC TES CLÉS
+import { translationService } from './translationService.js';
+
 const CONFIG = {
-  USELESS_FACTS_URL: 'https://uselessfacts.jsph.pl/api/v2',
-  CAT_FACTS_URL: 'https://catfact.ninja',
-  COUNTRIES_API_URL: 'https://restcountries.com/v3.1',
-  JOKE_API_URL: 'https://v2.jokeapi.dev',
-  ADVICE_API_URL: 'https://api.adviceslip.com', // API de conseils
-  QUOTES_API_URL: 'https://api.quotable.io', // API de citations
+  // API The Guardian (gratuite, 12k appels/jour) - EXCELLENTE POUR ARTICLES COMPLETS
+  GUARDIAN_API_URL: 'https://content.guardianapis.com/search',
+  GUARDIAN_API_KEY: import.meta.env.VITE_GUARDIAN_API_KEY || 'test',
 
-  COUNTRY: 'fr',
+  // GNews API (gratuite, 100 appels/jour)
+  GNEWS_API_URL: 'https://gnews.io/api/v4/search',
+  GNEWS_API_KEY: import.meta.env.VITE_GNEWS_API_KEY,
 
-  CACHE_DURATION: 5 * 60 * 1000, // 5 minutes
+  // API News from various sources (gratuit)
+  CURRENTS_API_URL: 'https://api.currentsapi.services/v1/search',
+  CURRENTS_API_KEY: import.meta.env.VITE_CURRENTS_API_KEY,
+
+  // NewsAPI (optionnel) - 1000 appels/jour gratuits
+  NEWS_API_URL: 'https://newsapi.org/v2/everything',
+  NEWS_API_KEY: import.meta.env.VITE_NEWS_API_KEY,
+
+  // Hacker News API (pas de clé requise) - actualités tech
+  HACKER_NEWS_API: 'https://hacker-news.firebaseio.com/v0',
+
+  CACHE_DURATION: 10 * 60 * 1000, // 10 minutes
   MAX_RETRIES: 3,
-  TIMEOUT: 10000 // 10 secondes
+  TIMEOUT: 15000
 };
 
 class APIManager {
   constructor() {
     this.cache = new Map();
     this.stats = {
-      uselessFacts: { calls: 0, errors: 0, lastCall: null },
-      catFacts: { calls: 0, errors: 0, lastCall: null },
-      numbersAPI: { calls: 0, errors: 0, lastCall: null },
-      countriesAPI: { calls: 0, errors: 0, lastCall: null },
-      jokeAPI: { calls: 0, errors: 0, lastCall: null },
-      historyAPI: { calls: 0, errors: 0, lastCall: null },
-      adviceAPI: { calls: 0, errors: 0, lastCall: null },
-      quotesAPI: { calls: 0, errors: 0, lastCall: null }
+      guardianAPI: { calls: 0, errors: 0, lastCall: null },
+      newsAPI: { calls: 0, errors: 0, lastCall: null },
+      hackerNewsAPI: { calls: 0, errors: 0, lastCall: null },
+      gnewsAPI: { calls: 0, errors: 0, lastCall: null },
+      currentsAPI: { calls: 0, errors: 0, lastCall: null }
     };
+
+    // Debug des clés au démarrage
+    console.log('🔑 Configuration des APIs:');
+    console.log('Guardian API Key:', CONFIG.GUARDIAN_API_KEY ? '✅ Configurée' : '❌ Manquante');
+    console.log('GNews API Key:', CONFIG.GNEWS_API_KEY ? '✅ Configurée' : '❌ Manquante');
+    console.log('Currents API Key:', CONFIG.CURRENTS_API_KEY ? '✅ Configurée' : '❌ Manquante');
+    console.log('NewsAPI Key:', CONFIG.NEWS_API_KEY ? '✅ Configurée' : '❌ Manquante');
+    console.log('Hacker News:', '✅ Pas de clé requise');
   }
 
   // Méthode utilitaire pour les appels HTTP avec timeout et retry
@@ -49,7 +67,7 @@ class APIManager {
     } catch (error) {
       clearTimeout(timeoutId);
 
-      if (retries > 0 && !error.name === 'AbortError') {
+      if (retries > 0 && error.name !== 'AbortError') {
         console.warn(`Retry ${CONFIG.MAX_RETRIES - retries + 1}/${CONFIG.MAX_RETRIES} for ${url}`);
         await new Promise(resolve => setTimeout(resolve, 1000));
         return this.fetchWithRetry(url, options, retries - 1);
@@ -59,367 +77,561 @@ class APIManager {
     }
   }
 
-  // Gestion du cache
-  getCacheKey(prefix, params) {
-    return `${prefix}_${JSON.stringify(params)}`;
-  }
-
-  getCachedData(key) {
-    const cached = this.cache.get(key);
-    if (cached && Date.now() - cached.timestamp < CONFIG.CACHE_DURATION) {
-      return cached.data;
-    }
-    this.cache.delete(key);
-    return null;
-  }
-
-  setCachedData(key, data) {
-    this.cache.set(key, {
-      data,
-      timestamp: Date.now()
-    });
-  }
-
-  // 🎲 Useless Facts API (100% gratuite)
-  async getUselessFact() {
+  // 🗞️ The Guardian API - Articles complets avec corps de texte
+  async getGuardianDetailedNews() {
     try {
-      this.stats.uselessFacts.calls++;
-      this.stats.uselessFacts.lastCall = new Date();
+      this.stats.guardianAPI.calls++;
+      this.stats.guardianAPI.lastCall = new Date();
 
-      const response = await this.fetchWithRetry(`${CONFIG.USELESS_FACTS_URL}/facts/random?language=en`);
-      const data = await response.json();
-
-      const fact = {
-        title: "Fait insolite authentique",
-        content: data.text,
-        source: "https://uselessfacts.jsph.pl",
-        category: "Insolite",
-        publishedAt: new Date().toISOString(),
-        isReal: true,
-        verified: true
-      };
-
-      console.log('✅ Fait insolite récupéré');
-      return fact;
-    } catch (error) {
-      this.stats.uselessFacts.errors++;
-      console.error('❌ Useless Facts Error:', error.message);
-      return null;
-    }
-  }
-
-  // 🐱 Cat Facts API (100% gratuite)
-  async getCatFact() {
-    try {
-      this.stats.catFacts.calls++;
-      this.stats.catFacts.lastCall = new Date();
-
-      const response = await this.fetchWithRetry(`${CONFIG.CAT_FACTS_URL}/fact`);
-      const data = await response.json();
-
-      const fact = {
-        title: "Fait authentique sur les chats",
-        content: data.fact,
-        source: "https://catfact.ninja",
-        category: "Animaux",
-        publishedAt: new Date().toISOString(),
-        isReal: true,
-        verified: true
-      };
-
-      console.log('✅ Fait sur les chats récupéré');
-      return fact;
-    } catch (error) {
-      this.stats.catFacts.errors++;
-      console.error('❌ Cat Facts Error:', error.message);
-      return null;
-    }
-  }
-
-  // 🔢 Numbers API - VERSION LOCALE (génération mathématique)
-  async getNumberFact() {
-    try {
-      this.stats.numbersAPI.calls++;
-      this.stats.numbersAPI.lastCall = new Date();
-
-      const randomNum = Math.floor(Math.random() * 1000);
-      
-      const mathFacts = [
-        `Le nombre ${randomNum} est ${randomNum % 2 === 0 ? 'pair' : 'impair'}.`,
-        `${randomNum} en binaire s'écrit ${randomNum.toString(2)}.`,
-        `La racine carrée de ${randomNum} est environ ${Math.sqrt(randomNum).toFixed(2)}.`,
-        `${randomNum} au carré égale ${randomNum * randomNum}.`,
-        `${randomNum} divisé par 3 donne un reste de ${randomNum % 3}.`,
-        `En hexadécimal, ${randomNum} s'écrit ${randomNum.toString(16).toUpperCase()}.`,
-        `Le nombre ${randomNum} a ${randomNum.toString().length} chiffre(s).`,
-        `${randomNum} multiplié par 9 égale ${randomNum * 9}.`,
-        `${randomNum} est ${isPrime(randomNum) ? 'un nombre premier' : 'un nombre composé'}.`,
-        `La somme des chiffres de ${randomNum} est ${randomNum.toString().split('').reduce((sum, digit) => sum + parseInt(digit), 0)}.`
+      // Mots-clés pour des actualités bizarres/insolites
+      const weirdKeywords = [
+        'strange', 'weird', 'bizarre', 'unusual', 'odd', 'mysterious',
+        'viral', 'social media', 'internet', 'technology gone wrong',
+        'artificial intelligence', 'robot', 'smartphone', 'app',
+        'florida', 'japan weird', 'unusual discovery', 'bizarre study'
       ];
 
-      const randomFact = mathFacts[Math.floor(Math.random() * mathFacts.length)];
+      const randomKeyword = weirdKeywords[Math.floor(Math.random() * weirdKeywords.length)];
 
-      const fact = {
-        title: `Fait mathématique sur le nombre ${randomNum}`,
-        content: randomFact,
-        source: "https://fr.wikipedia.org/wiki/Mathématiques",
-        category: "Mathématiques",
-        publishedAt: new Date().toISOString(),
-        isReal: true,
-        verified: true
-      };
+      const params = new URLSearchParams({
+        q: randomKeyword,
+        'page-size': '20',
+        'order-by': 'relevance',
+        'show-fields': 'headline,bodyText,webUrl,thumbnail,byline,standfirst', // standfirst = résumé
+        'show-tags': 'keyword',
+        'api-key': CONFIG.GUARDIAN_API_KEY
+      });
 
-      console.log('✅ Fait mathématique généré');
-      return fact;
-    } catch (error) {
-      this.stats.numbersAPI.errors++;
-      console.error('❌ Numbers API Error:', error.message);
-      return null;
-    }
-  }
-
-  // 🌍 REST Countries API (100% gratuite)
-  async getCountryFact() {
-    try {
-      this.stats.countriesAPI.calls++;
-      this.stats.countriesAPI.lastCall = new Date();
-
-      const countries = ['france', 'japan', 'brazil', 'canada', 'australia', 'norway', 'chile', 'italy', 'spain', 'germany'];
-      const randomCountry = countries[Math.floor(Math.random() * countries.length)];
-
-      const response = await this.fetchWithRetry(`${CONFIG.COUNTRIES_API_URL}/name/${randomCountry}?fields=name,capital,population,area,languages`);
-      const data = await response.json();
-      const country = data[0];
-
-      const fact = {
-        title: `Informations sur ${country.name.common}`,
-        content: `Capitale : ${country.capital?.[0] || 'Non spécifiée'}. Population : ${(country.population || 0).toLocaleString('fr-FR')} habitants. Superficie : ${(country.area || 0).toLocaleString('fr-FR')} km².`,
-        source: "https://restcountries.com",
-        category: "Géographie",
-        publishedAt: new Date().toISOString(),
-        isReal: true,
-        verified: true
-      };
-
-      console.log('✅ Fait géographique récupéré');
-      return fact;
-    } catch (error) {
-      this.stats.countriesAPI.errors++;
-      console.error('❌ Countries API Error:', error.message);
-      return null;
-    }
-  }
-
-  // 🎭 Joke API (100% gratuite)
-  async getJoke() {
-    try {
-      this.stats.jokeAPI.calls++;
-      this.stats.jokeAPI.lastCall = new Date();
-
-      const response = await this.fetchWithRetry(`${CONFIG.JOKE_API_URL}/joke/Any?blacklistFlags=nsfw,religious,political,racist,sexist,explicit&type=single`);
+      const url = `${CONFIG.GUARDIAN_API_URL}?${params.toString()}`;
+      const response = await this.fetchWithRetry(url);
       const data = await response.json();
 
-      const joke = {
-        title: "Blague du jour",
-        content: data.joke,
-        source: "https://jokeapi.dev",
-        category: "Humour",
-        publishedAt: new Date().toISOString(),
-        isReal: true,
-        verified: true
-      };
+      if (data.response && data.response.results && data.response.results.length > 0) {
+        // Filtrer les articles avec du contenu substantiel
+        const articlesWithContent = data.response.results.filter(article =>
+            article.fields?.bodyText &&
+            article.fields.bodyText.length > 200 &&
+            article.webTitle
+        );
 
-      console.log('✅ Blague récupérée');
-      return joke;
+        if (articlesWithContent.length === 0) {
+          throw new Error('Aucun article avec contenu substantiel trouvé');
+        }
+
+        const randomArticle = articlesWithContent[Math.floor(Math.random() * articlesWithContent.length)];
+
+        // Extraire et nettoyer le contenu
+        let content = randomArticle.fields.bodyText || '';
+
+        // Utiliser standfirst (résumé) si disponible pour commencer
+        if (randomArticle.fields.standfirst) {
+          content = randomArticle.fields.standfirst + ' ' + content;
+        }
+
+        const cleanContent = this.extractReadableContent(content);
+
+        const article = {
+          title: randomArticle.webTitle,
+          content: cleanContent,
+          source: randomArticle.webUrl,
+          category: "Actualités Insolites",
+          publishedAt: randomArticle.webPublicationDate || new Date().toISOString(),
+          isReal: true,
+          verified: true,
+          author: randomArticle.fields?.byline || 'The Guardian',
+          thumbnail: randomArticle.fields?.thumbnail,
+          keyword: randomKeyword
+        };
+
+        console.log('✅ Article Guardian complet récupéré:', randomKeyword);
+
+        // 🇫🇷 Traduire automatiquement en français
+        const translatedArticle = await translationService.translateArticle(article);
+        return translatedArticle;
+      }
+
+      throw new Error('Aucun article trouvé');
+
     } catch (error) {
-      this.stats.jokeAPI.errors++;
-      console.error('❌ Joke API Error:', error.message);
+      this.stats.guardianAPI.errors++;
+      console.error('❌ Guardian API Error:', error.message);
       return null;
     }
   }
 
-  // 💡 Advice API (nouvelle - 100% gratuite)
-  async getAdvice() {
+  // 🌐 Hacker News API (gratuit, pas de clé requise, actualités tech)
+  async getHackerNewsStories() {
     try {
-      this.stats.adviceAPI.calls++;
-      this.stats.adviceAPI.lastCall = new Date();
+      this.stats.hackerNewsAPI.calls++;
+      this.stats.hackerNewsAPI.lastCall = new Date();
 
-      const response = await this.fetchWithRetry(`${CONFIG.ADVICE_API_URL}/advice`);
-      const data = await response.json();
+      // Récupérer les top stories de Hacker News
+      const topStoriesResponse = await this.fetchWithRetry(`${CONFIG.HACKER_NEWS_API}/topstories.json`);
+      const topStoryIds = await topStoriesResponse.json();
 
-      const advice = {
-        title: "Conseil du jour",
-        content: data.slip.advice,
-        source: "https://api.adviceslip.com",
-        category: "Conseils",
-        publishedAt: new Date().toISOString(),
-        isReal: true,
-        verified: true
-      };
+      // Prendre 20 premières stories au hasard
+      const randomStoryIds = topStoryIds.slice(0, 50).sort(() => 0.5 - Math.random()).slice(0, 20);
 
-      console.log('✅ Conseil récupéré');
-      return advice;
+      // Récupérer les détails de 5 stories random
+      const storyPromises = randomStoryIds.slice(0, 5).map(async (id) => {
+        try {
+          const storyResponse = await this.fetchWithRetry(`${CONFIG.HACKER_NEWS_API}/item/${id}.json`);
+          return await storyResponse.json();
+        } catch (error) {
+          return null;
+        }
+      });
+
+      const stories = await Promise.all(storyPromises);
+      const validStories = stories.filter(story =>
+          story &&
+          story.title &&
+          story.url &&
+          !story.deleted &&
+          story.type === 'story' &&
+          (story.title.toLowerCase().includes('ai') ||
+              story.title.toLowerCase().includes('tech') ||
+              story.title.toLowerCase().includes('robot') ||
+              story.title.toLowerCase().includes('weird') ||
+              story.title.toLowerCase().includes('unusual') ||
+              story.title.toLowerCase().includes('strange'))
+      );
+
+      if (validStories.length > 0) {
+        const randomStory = validStories[Math.floor(Math.random() * validStories.length)];
+
+        // Créer un contenu basé sur le titre et le score
+        const content = `Cette actualité tech a été partagée sur Hacker News avec ${randomStory.score || 0} points et ${randomStory.descendants || 0} commentaires. ${randomStory.title}. Cette histoire a attiré l'attention de la communauté technologique pour son caractère inhabituel ou innovant.`;
+
+        const article = {
+          title: randomStory.title,
+          content: content,
+          source: randomStory.url,
+          category: "Hacker News Tech",
+          publishedAt: new Date(randomStory.time * 1000).toISOString(),
+          isReal: true,
+          verified: true,
+          author: `u/${randomStory.by || 'HackerNews'}`,
+          score: randomStory.score,
+          comments: randomStory.descendants
+        };
+
+        console.log('✅ Histoire Hacker News récupérée');
+
+        // 🇫🇷 Traduire automatiquement en français
+        const translatedArticle = await translationService.translateArticle(article);
+        return translatedArticle;
+      }
+
+      throw new Error('Aucune histoire tech trouvée sur Hacker News');
+
     } catch (error) {
-      this.stats.adviceAPI.errors++;
-      console.error('❌ Advice API Error:', error.message);
+      this.stats.hackerNewsAPI.errors++;
+      console.error('❌ Hacker News API Error:', error.message);
       return null;
     }
   }
 
-  // 📝 Quotes API (nouvelle - 100% gratuite)
-  async getQuote() {
-    try {
-      this.stats.quotesAPI.calls++;
-      this.stats.quotesAPI.lastCall = new Date();
-
-      const response = await this.fetchWithRetry(`${CONFIG.QUOTES_API_URL}/random?minLength=50&maxLength=150`);
-      const data = await response.json();
-
-      const quote = {
-        title: `Citation de ${data.author}`,
-        content: `"${data.content}" - ${data.author}`,
-        source: "https://quotable.io",
-        category: "Citations",
-        publishedAt: new Date().toISOString(),
-        isReal: true,
-        verified: true
-      };
-
-      console.log('✅ Citation récupérée');
-      return quote;
-    } catch (error) {
-      this.stats.quotesAPI.errors++;
-      console.error('❌ Quotes API Error:', error.message);
+  // 📡 GNews API (100 appels/jour gratuits)
+  async getGNewsWeirdNews() {
+    if (!CONFIG.GNEWS_API_KEY || CONFIG.GNEWS_API_KEY === 'your_gnews_api_key_here') {
+      console.log('⚠️ GNews API: Clé manquante');
       return null;
     }
-  }
 
-  // 🏛️ History API - VERSION LOCALE (événements historiques)
-  async getHistoryFact() {
     try {
-      this.stats.historyAPI.calls++;
-      this.stats.historyAPI.lastCall = new Date();
+      this.stats.gnewsAPI.calls++;
+      this.stats.gnewsAPI.lastCall = new Date();
 
-      const historicalEvents = [
-        { year: 1969, text: "Premier alunissage de Neil Armstrong et Buzz Aldrin sur la Lune" },
-        { year: 1989, text: "Chute du mur de Berlin et fin de la guerre froide" },
-        { year: 1945, text: "Fin de la Seconde Guerre mondiale en Europe" },
-        { year: 1776, text: "Déclaration d'indépendance des États-Unis d'Amérique" },
-        { year: 1789, text: "Début de la Révolution française avec la prise de la Bastille" },
-        { year: 1492, text: "Christophe Colomb découvre l'Amérique" },
-        { year: 1969, text: "Festival de Woodstock rassemble 400 000 personnes" },
-        { year: 1963, text: "Discours 'I Have a Dream' de Martin Luther King" },
-        { year: 1991, text: "Invention du World Wide Web par Tim Berners-Lee" },
-        { year: 2001, text: "Lancement de Wikipedia, l'encyclopédie libre" },
-        { year: 1969, text: "Premier vol commercial du Concorde supersonique" },
-        { year: 1981, text: "Lancement de MTV et révolution de la musique télévisée" },
-        { year: 1990, text: "Réunification officielle de l'Allemagne" },
-        { year: 1957, text: "Lancement de Spoutnik 1, premier satellite artificiel" },
-        { year: 1969, text: "Création d'ARPANET, ancêtre d'Internet" },
-        { year: 1953, text: "Découverte de la structure de l'ADN par Watson et Crick" },
-        { year: 1969, text: "Premier festival de rock de Woodstock" },
-        { year: 1989, text: "Invention du Web par Tim Berners-Lee au CERN" }
+      const weirdQueries = [
+        'weird technology', 'bizarre science', 'unusual discovery',
+        'strange invention', 'viral news', 'internet phenomenon',
+        'artificial intelligence news', 'robot news', 'tech fail'
       ];
 
-      const randomEvent = historicalEvents[Math.floor(Math.random() * historicalEvents.length)];
+      const randomQuery = weirdQueries[Math.floor(Math.random() * weirdQueries.length)];
 
-      const fact = {
-        title: `Événement historique de ${randomEvent.year}`,
-        content: randomEvent.text,
-        source: "https://fr.wikipedia.org/wiki/Histoire",
-        category: "Histoire",
-        publishedAt: new Date().toISOString(),
-        isReal: true,
-        verified: true
-      };
+      const params = new URLSearchParams({
+        q: randomQuery,
+        lang: 'en',
+        country: 'us',
+        max: '20',
+        apikey: CONFIG.GNEWS_API_KEY
+      });
 
-      console.log('✅ Fait historique généré');
-      return fact;
+      const url = `${CONFIG.GNEWS_API_URL}?${params.toString()}`;
+      const response = await this.fetchWithRetry(url);
+      const data = await response.json();
+
+      if (data.articles && data.articles.length > 0) {
+        // Filtrer les articles avec contenu substantiel
+        const validArticles = data.articles.filter(article =>
+            article.title &&
+            article.description &&
+            article.description.length > 100 &&
+            article.content &&
+            !article.title.includes('[Removed]')
+        );
+
+        if (validArticles.length > 0) {
+          const randomArticle = validArticles[Math.floor(Math.random() * validArticles.length)];
+
+          // Combiner description et début du contenu
+          let fullContent = randomArticle.description;
+          if (randomArticle.content && randomArticle.content !== randomArticle.description) {
+            fullContent += ' ' + this.extractReadableContent(randomArticle.content);
+          }
+
+          const article = {
+            title: randomArticle.title,
+            content: fullContent,
+            source: randomArticle.url,
+            category: "Actualités Tech",
+            publishedAt: randomArticle.publishedAt,
+            isReal: true,
+            verified: true,
+            author: randomArticle.source?.name || 'GNews',
+            thumbnail: randomArticle.image
+          };
+
+          console.log('✅ Article GNews récupéré');
+
+          // 🇫🇷 Traduire automatiquement en français
+          const translatedArticle = await translationService.translateArticle(article);
+          return translatedArticle;
+        }
+      }
+
+      throw new Error('Aucun article GNews valide trouvé');
+
     } catch (error) {
-      this.stats.historyAPI.errors++;
-      console.error('❌ History API Error:', error.message);
+      this.stats.gnewsAPI.errors++;
+      console.error('❌ GNews API Error:', error.message);
+      return null;
+    }
+  }
+
+  // 📊 Currents API (gratuite, bons articles complets)
+  async getCurrentsNews() {
+    if (!CONFIG.CURRENTS_API_KEY || CONFIG.CURRENTS_API_KEY === 'your_currents_api_key_here') {
+      console.log('⚠️ Currents API: Clé manquante');
+      return null;
+    }
+
+    try {
+      this.stats.currentsAPI.calls++;
+      this.stats.currentsAPI.lastCall = new Date();
+
+      const techKeywords = [
+        'artificial intelligence', 'robot', 'technology', 'weird tech',
+        'internet', 'viral', 'bizarre science', 'unusual study'
+      ];
+
+      const randomKeyword = techKeywords[Math.floor(Math.random() * techKeywords.length)];
+
+      const params = new URLSearchParams({
+        keywords: randomKeyword,
+        language: 'en',
+        apiKey: CONFIG.CURRENTS_API_KEY
+      });
+
+      const url = `${CONFIG.CURRENTS_API_URL}?${params.toString()}`;
+      const response = await this.fetchWithRetry(url);
+      const data = await response.json();
+
+      if (data.status === 'ok' && data.news && data.news.length > 0) {
+        // Filtrer les articles avec description substantielle
+        const validArticles = data.news.filter(article =>
+            article.title &&
+            article.description &&
+            article.description.length > 150
+        );
+
+        if (validArticles.length > 0) {
+          const randomArticle = validArticles[Math.floor(Math.random() * validArticles.length)];
+
+          const article = {
+            title: randomArticle.title,
+            content: randomArticle.description,
+            source: randomArticle.url,
+            category: "Tech News",
+            publishedAt: randomArticle.published,
+            isReal: true,
+            verified: true,
+            author: randomArticle.author || 'Currents API',
+            thumbnail: randomArticle.image
+          };
+
+          console.log('✅ Article Currents récupéré');
+
+          // 🇫🇷 Traduire automatiquement en français
+          const translatedArticle = await translationService.translateArticle(article);
+          return translatedArticle;
+        }
+      }
+
+      throw new Error('Aucun article Currents valide trouvé');
+
+    } catch (error) {
+      this.stats.currentsAPI.errors++;
+      console.error('❌ Currents API Error:', error.message);
+      return null;
+    }
+  }
+
+  // 📰 NewsAPI comme backup (si clé fournie)
+  async getNewsAPIWeirdNews() {
+    if (!CONFIG.NEWS_API_KEY || CONFIG.NEWS_API_KEY === 'your_news_api_key_here') {
+      console.log('⚠️ NewsAPI: Clé manquante');
+      return null;
+    }
+
+    try {
+      this.stats.newsAPI.calls++;
+      this.stats.newsAPI.lastCall = new Date();
+
+      const weirdQuery = [
+        'weird technology', 'bizarre incident', 'unusual story', 'viral news',
+        'artificial intelligence', 'robot malfunction', 'tech gone wrong'
+      ];
+
+      const randomQuery = weirdQuery[Math.floor(Math.random() * weirdQuery.length)];
+
+      const params = new URLSearchParams({
+        q: randomQuery,
+        sortBy: 'publishedAt',
+        pageSize: '20',
+        language: 'en',
+        apiKey: CONFIG.NEWS_API_KEY
+      });
+
+      const url = `${CONFIG.NEWS_API_URL}?${params.toString()}`;
+      const response = await this.fetchWithRetry(url);
+      const data = await response.json();
+
+      if (data.articles && data.articles.length > 0) {
+        const validArticles = data.articles.filter(article =>
+            article.title &&
+            article.description &&
+            article.description.length > 100 &&
+            !article.title.includes('[Removed]')
+        );
+
+        if (validArticles.length > 0) {
+          const randomArticle = validArticles[Math.floor(Math.random() * validArticles.length)];
+
+          let content = randomArticle.description;
+          if (randomArticle.content) {
+            content += ' ' + this.extractReadableContent(randomArticle.content);
+          }
+
+          const article = {
+            title: randomArticle.title,
+            content: content,
+            source: randomArticle.url,
+            category: "NewsAPI",
+            publishedAt: randomArticle.publishedAt,
+            isReal: true,
+            verified: true,
+            author: randomArticle.author || randomArticle.source?.name
+          };
+
+          console.log('✅ Article NewsAPI récupéré');
+
+          // 🇫🇷 Traduire automatiquement en français
+          const translatedArticle = await translationService.translateArticle(article);
+          return translatedArticle;
+        }
+      }
+
+      throw new Error('Aucun article NewsAPI valide trouvé');
+
+    } catch (error) {
+      this.stats.newsAPI.errors++;
+      console.error('❌ NewsAPI Error:', error.message);
       return null;
     }
   }
 
   // 🧪 Test de toutes les APIs
   async testAPIs() {
-    console.log('🧪 Test de toutes les APIs fonctionnelles...');
+    console.log('🧪 Test des APIs d\'actualités avec contenu complet...');
 
     const results = {
-      uselessFacts: false,
-      catFacts: false,
-      numbersAPI: false,
-      countriesAPI: false,
-      jokeAPI: false,
-      historyAPI: false,
-      adviceAPI: false,
-      quotesAPI: false
+      guardianAPI: false,
+      hackerNewsAPI: false,
+      gnewsAPI: false,
+      currentsAPI: false,
+      newsAPI: false,
+      translation: false
     };
 
-    // Test toutes les APIs gratuites
-    const freeAPIs = [
-      { name: 'Useless Facts', test: () => this.getUselessFact(), key: 'uselessFacts' },
-      { name: 'Cat Facts', test: () => this.getCatFact(), key: 'catFacts' },
-      { name: 'Numbers API', test: () => this.getNumberFact(), key: 'numbersAPI' },
-      { name: 'Countries API', test: () => this.getCountryFact(), key: 'countriesAPI' },
-      { name: 'Joke API', test: () => this.getJoke(), key: 'jokeAPI' },
-      { name: 'History API', test: () => this.getHistoryFact(), key: 'historyAPI' },
-      { name: 'Advice API', test: () => this.getAdvice(), key: 'adviceAPI' },
-      { name: 'Quotes API', test: () => this.getQuote(), key: 'quotesAPI' }
-    ];
+    // Test des APIs de traduction d'abord
+    try {
+      const translationResults = await translationService.testTranslationAPIs();
+      results.translation = Object.values(translationResults).some(result => result);
+      console.log('Traduction:', results.translation ? '✅ Au moins une API fonctionne' : '❌ Aucune API de traduction');
+    } catch (error) {
+      console.log('Traduction: ❌ Erreur -', error.message);
+    }
 
-    for (const api of freeAPIs) {
+    // Test Guardian API
+    try {
+      const guardianResult = await this.getGuardianDetailedNews();
+      results.guardianAPI = !!guardianResult;
+      console.log('Guardian API:', results.guardianAPI ? '✅ OK' : '❌ Erreur');
+    } catch (error) {
+      console.log('Guardian API: ❌ Erreur -', error.message);
+    }
+
+    // Test Hacker News API
+    try {
+      const hackerNewsResult = await this.getHackerNewsStories();
+      results.hackerNewsAPI = !!hackerNewsResult;
+      console.log('Hacker News API:', results.hackerNewsAPI ? '✅ OK' : '❌ Erreur');
+    } catch (error) {
+      console.log('Hacker News API: ❌ Erreur -', error.message);
+    }
+
+    // Test GNews API (si clé disponible)
+    if (CONFIG.GNEWS_API_KEY && CONFIG.GNEWS_API_KEY !== 'your_gnews_api_key_here') {
       try {
-        const result = await api.test();
-        results[api.key] = !!result;
-        console.log(`${api.name}:`, results[api.key] ? '✅ OK' : '❌ Erreur');
+        const gnewsResult = await this.getGNewsWeirdNews();
+        results.gnewsAPI = !!gnewsResult;
+        console.log('GNews API:', results.gnewsAPI ? '✅ OK' : '❌ Erreur');
       } catch (error) {
-        console.log(`${api.name}: ❌ Erreur -`, error.message);
+        console.log('GNews API: ❌ Erreur -', error.message);
       }
+    } else {
+      console.log('GNews API: ⚠️ Pas de clé configurée');
+    }
+
+    // Test Currents API (si clé disponible)
+    if (CONFIG.CURRENTS_API_KEY && CONFIG.CURRENTS_API_KEY !== 'your_currents_api_key_here') {
+      try {
+        const currentsResult = await this.getCurrentsNews();
+        results.currentsAPI = !!currentsResult;
+        console.log('Currents API:', results.currentsAPI ? '✅ OK' : '❌ Erreur');
+      } catch (error) {
+        console.log('Currents API: ❌ Erreur -', error.message);
+      }
+    } else {
+      console.log('Currents API: ⚠️ Pas de clé configurée');
+    }
+
+    // Test NewsAPI (si clé disponible)
+    if (CONFIG.NEWS_API_KEY && CONFIG.NEWS_API_KEY !== 'your_news_api_key_here') {
+      try {
+        const newsResult = await this.getNewsAPIWeirdNews();
+        results.newsAPI = !!newsResult;
+        console.log('NewsAPI:', results.newsAPI ? '✅ OK' : '❌ Erreur');
+      } catch (error) {
+        console.log('NewsAPI: ❌ Erreur -', error.message);
+      }
+    } else {
+      console.log('NewsAPI: ⚠️ Pas de clé configurée');
     }
 
     console.log('📊 Résumé des tests:', results);
-    console.log('ℹ️ News API désactivée (nécessite un serveur backend)');
     return results;
   }
 
-  // 🌟 Méthode principale : mélange de toutes les actualités
+  // 🌟 Méthode principale : mélange actualités complètes
   async getMixedNews() {
     const results = [];
 
     try {
-      console.log('🔄 Récupération d\'actualités variées...');
+      console.log('🔄 Récupération d\'actualités complètes...');
 
-      // Récupérer des contenus depuis TOUTES les APIs gratuites
-      const freeAPIs = [
-        () => this.getUselessFact(),
-        () => this.getCatFact(),
-        () => this.getNumberFact(),
-        () => this.getCountryFact(),
-        () => this.getJoke(),
-        () => this.getHistoryFact(),
-        () => this.getAdvice(),
-        () => this.getQuote()
+      // APIs avec articles complets - essayer toutes les sources
+      const newsAPIs = [
+        () => this.getGuardianDetailedNews(),
+        () => this.getHackerNewsStories(),
+        () => this.getGNewsWeirdNews(),
+        () => this.getCurrentsNews(),
+        () => this.getNewsAPIWeirdNews(),
+        () => this.getGuardianDetailedNews() // Double Guardian pour plus de chances
       ];
 
-      // Exécuter 6 APIs gratuites en parallèle pour avoir du contenu varié
-      const promises = freeAPIs.slice(0, 6).map(api => api().catch(err => null));
-      const freeResults = await Promise.all(promises);
+      // Exécuter en parallèle mais avec limite
+      const promises = newsAPIs.slice(0, 6).map(api =>
+          api().catch(err => {
+            console.warn('API failed:', err.message);
+            return null;
+          })
+      );
+
+      const newsResults = await Promise.allSettled(promises);
 
       // Filtrer les résultats valides
-      const validFreeResults = freeResults.filter(result => result !== null);
-      results.push(...validFreeResults);
+      const validNews = newsResults
+          .filter(result => result.status === 'fulfilled' && result.value !== null)
+          .map(result => result.value);
+
+      results.push(...validNews);
+
+      console.log(`📊 ${validNews.length} articles complets récupérés`);
 
     } catch (error) {
       console.error('❌ Erreur lors du mélange des actualités:', error);
     }
 
-    console.log(`📊 Total: ${results.length} contenus récupérés`);
     return results;
   }
 
-  // Obtenir les statistiques d'utilisation
+  // 🧹 Méthodes utilitaires pour nettoyer le contenu
+  extractReadableContent(text, maxLength = 500) {
+    if (!text) return '';
+
+    // Nettoyer le HTML et les caractères bizarres
+    const cleanText = text
+        .replace(/<[^>]*>/g, ' ') // Supprimer HTML
+        .replace(/&[^;]+;/g, ' ') // Supprimer entités HTML
+        .replace(/\s+/g, ' ') // Normaliser espaces
+        .replace(/\[.*?\]/g, '') // Supprimer crochets [...]
+        .trim();
+
+    // Couper aux phrases complètes
+    const sentences = cleanText.split(/[.!?]+/)
+        .filter(sentence => sentence.trim().length > 20)
+        .slice(0, 3); // Maximum 3 phrases
+
+    let result = sentences.join('. ').trim();
+    if (result && !result.endsWith('.')) {
+      result += '.';
+    }
+
+    // Limiter la longueur si nécessaire
+    if (result.length > maxLength) {
+      result = result.substring(0, maxLength).trim();
+      // Couper au dernier mot complet
+      const lastSpace = result.lastIndexOf(' ');
+      if (lastSpace > maxLength * 0.8) {
+        result = result.substring(0, lastSpace) + '...';
+      }
+    }
+
+    return result;
+  }
+
+  cleanHTMLContent(html) {
+    if (!html) return '';
+
+    return html
+        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Supprimer scripts
+        .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '') // Supprimer styles
+        .replace(/<[^>]*>/g, ' ') // Supprimer toutes les balises HTML
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#\d+;/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+  }
+
+  // Statistiques
   getStats() {
     const totalCalls = Object.values(this.stats).reduce((sum, api) => sum + api.calls, 0);
     const totalErrors = Object.values(this.stats).reduce((sum, api) => sum + api.errors, 0);
@@ -433,51 +645,27 @@ class APIManager {
     };
   }
 
-  // Nettoyer le cache
   clearCache() {
     this.cache.clear();
     console.log('🧹 Cache nettoyé');
   }
 
-  // Méthode utilitaire pour tronquer le texte
-  truncateText(text, maxLength) {
-    if (!text) return '';
-    if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength).trim() + '...';
-  }
-
-  // Méthode de debug
   debug() {
-    console.group('🔧 Debug API Manager');
+    console.group('🔧 Debug API Manager - Articles Complets');
     console.log('📊 Statistiques:', this.getStats());
-    console.log('🆓 APIs gratuites:', '8 APIs fonctionnelles');
+    console.log('🗞️ APIs configurées:', 'Guardian, Hacker News, GNews, Currents, NewsAPI');
     console.log('💾 Cache:', `${this.cache.size} entrées`);
-    console.log('ℹ️ Note:', 'News API désactivée (nécessite backend)');
+    console.log('🎯 Focus:', 'Articles complets avec titre + contenu substantiel');
     console.groupEnd();
   }
 }
 
-// 🔧 Fonction utilitaire pour vérifier si un nombre est premier
-function isPrime(num) {
-  if (num < 2) return false;
-  if (num === 2) return true;
-  if (num % 2 === 0) return false;
-  
-  for (let i = 3; i <= Math.sqrt(num); i += 2) {
-    if (num % i === 0) return false;
-  }
-  return true;
-}
-
-// Créer une instance unique
+// Instance unique
 export const apiManager = new APIManager();
 
-// Export de la configuration pour utilisation ailleurs
+// Export des utilitaires
 export { CONFIG };
-
-// Export des fonctions utilitaires
 export const utils = {
-  truncateText: (text, maxLength) => apiManager.truncateText(text, maxLength),
   clearCache: () => apiManager.clearCache(),
   getStats: () => apiManager.getStats(),
   debug: () => apiManager.debug()
