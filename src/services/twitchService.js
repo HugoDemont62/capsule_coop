@@ -331,54 +331,89 @@ class TwitchChatService {
         });
     }
 
-    // ⭐ ANALYSER LES MESSAGES PRIVÉS
     parsePrivateMessage(message) {
         try {
+            console.log('📥 Raw message:', message); // DEBUG IMPORTANT
+
             // Extraire le contenu du message
             const messageParts = message.split(' :');
+            if (messageParts.length < 2) {
+                console.log('⚠️ Message format invalide'); // DEBUG
+                return;
+            }
+
             const messageContent = messageParts[messageParts.length - 1].trim().toLowerCase();
 
-            // Extraire le nom d'utilisateur
-            const userMatch = message.match(/:(\w+)!/);
+            // Extraire le nom d'utilisateur - REGEX AMÉLIORÉE
+            const userMatch = message.match(/:([a-zA-Z0-9_]+)!/);
             const username = userMatch ? userMatch[1] : 'unknown';
 
-            console.log(`💬 ${username}: ${messageContent}`);
+            console.log(`💬 ${username}: "${messageContent}"`); // DEBUG AMÉLIORÉ
+
+            // ⭐ VÉRIFIER LE CANAL - IMPORTANT !
+            const channelMatch = message.match(/PRIVMSG #([a-zA-Z0-9_]+)/);
+            const channel = channelMatch ? channelMatch[1] : null;
+
+            if (channel && channel.toLowerCase() !== this.channelName.toLowerCase()) {
+                console.log(`⚠️ Message d'un autre canal: ${channel} vs ${this.channelName}`);
+                return;
+            }
 
             // ⭐ NOTIFIER LES LISTENERS DU MESSAGE
             if (this.onChatMessage) {
                 this.onChatMessage({
                     username,
                     message: messageContent,
-                    timestamp: Date.now()
+                    timestamp: Date.now(),
+                    channel: channel
                 });
             }
 
             // ⭐ TRAITER LES VOTES SI ACTIFS
             if (this.isVotingActive) {
+                console.log(`🗳️ Processing potential vote: "${messageContent}" (voting active: ${this.isVotingActive})`);
                 this.processVote(username, messageContent);
+            } else {
+                console.log(`⚠️ Vote ignored - voting inactive: "${messageContent}"`);
             }
 
         } catch (error) {
             console.error('❌ Erreur parsing message:', error);
+            console.error('Message brut:', message);
         }
     }
 
-    // 🗳️ Traitement des votes
     processVote(username, message) {
+        console.log(`🔍 Checking vote from ${username}: "${message}"`); // DEBUG
+
         // ⭐ ÉVITER LES VOTES MULTIPLES
         const voterId = `${this.currentQuestionId}_${username}`;
         if (this.votes.voters.has(voterId)) {
-            return; // Utilisateur a déjà voté pour cette question
+            console.log(`⚠️ ${username} a déjà voté pour cette question`);
+            return;
         }
 
         let voteType = null;
 
-        // ⭐ VÉRIFIER LES COMMANDES VRAI
-        if (TWITCH_CONFIG.VOTE_COMMANDS.TRUE.some(cmd => message.startsWith(cmd))) {
+        // ⭐ VÉRIFIER LES COMMANDES VRAI - DEBUG AMÉLIORÉ
+        const trueCommands = TWITCH_CONFIG.VOTE_COMMANDS.TRUE;
+        const falseCommands = TWITCH_CONFIG.VOTE_COMMANDS.FALSE;
+
+        console.log('🔍 Checking against TRUE commands:', trueCommands);
+        console.log('🔍 Checking against FALSE commands:', falseCommands);
+
+        if (trueCommands.some(cmd => {
+            const matches = message.startsWith(cmd);
+            console.log(`  - "${message}" starts with "${cmd}": ${matches}`);
+            return matches;
+        })) {
             voteType = 'true';
         }
-        // ⭐ VÉRIFIER LES COMMANDES FAUX
-        else if (TWITCH_CONFIG.VOTE_COMMANDS.FALSE.some(cmd => message.startsWith(cmd))) {
+        else if (falseCommands.some(cmd => {
+            const matches = message.startsWith(cmd);
+            console.log(`  - "${message}" starts with "${cmd}": ${matches}`);
+            return matches;
+        })) {
             voteType = 'false';
         }
 
@@ -387,48 +422,65 @@ class TwitchChatService {
             this.votes[voteType]++;
             this.votes.voters.add(voterId);
 
-            console.log(`🗳️ Vote de ${username}: ${voteType.toUpperCase()}`);
+            console.log(`🎯 VOTE ENREGISTRÉ de ${username}: ${voteType.toUpperCase()}`);
             console.log(`📊 Scores actuels - VRAI: ${this.votes.true}, FAUX: ${this.votes.false}`);
 
             // ⭐ NOTIFIER LES COMPOSANTS REACT
             if (this.onVoteUpdate) {
-                this.onVoteUpdate({
+                const voteData = {
                     trueVotes: this.votes.true,
                     falseVotes: this.votes.false,
                     totalVotes: this.votes.true + this.votes.false,
                     lastVoter: username
-                });
+                };
+
+                console.log(`📤 Notifying React components:`, voteData);
+                this.onVoteUpdate(voteData);
+            } else {
+                console.error('❌ onVoteUpdate callback is null!');
             }
+        } else {
+            console.log(`⚠️ Message "${message}" ne correspond à aucune commande de vote`);
         }
     }
 
-    // 🎮 Gestion du système de vote
+// 🎮 Gestion du système de vote - VERSION AMÉLIORÉE
     startVoting(questionId) {
-        console.log('🎬 Début du vote pour la question:', questionId);
+        console.log('🎬 DÉMARRAGE DU VOTE pour la question:', questionId);
 
         this.currentQuestionId = questionId;
         this.isVotingActive = true;
         this.resetVotes();
 
-        // ⭐ ANNONCER DANS LE CHAT
-        this.sendChatMessage('🎮 Nouveau quiz ! Votez avec !vrai ou !faux dans le chat ! 🗳️');
+        console.log('🗳️ Système de vote maintenant ACTIF');
+        console.log('📋 Commandes acceptées:', {
+            TRUE: TWITCH_CONFIG.VOTE_COMMANDS.TRUE,
+            FALSE: TWITCH_CONFIG.VOTE_COMMANDS.FALSE
+        });
+
+        // ⭐ ANNONCER DANS LE CHAT si connecté
+        if (this.isConnected) {
+            this.sendChatMessage('🎮 Nouveau quiz ! Votez avec !vrai ou !faux dans le chat ! 🗳️');
+        }
     }
 
     stopVoting() {
-        console.log('🛑 Fin du vote');
+        console.log('🛑 ARRÊT DU VOTE');
         console.log(`📊 Résultats finaux - VRAI: ${this.votes.true}, FAUX: ${this.votes.false}`);
 
         this.isVotingActive = false;
 
-        // ⭐ ANNONCER LES RÉSULTATS
-        const total = this.votes.true + this.votes.false;
-        if (total > 0) {
-            const truePercent = Math.round((this.votes.true / total) * 100);
-            const falsePercent = Math.round((this.votes.false / total) * 100);
+        // ⭐ ANNONCER LES RÉSULTATS si connecté
+        if (this.isConnected) {
+            const total = this.votes.true + this.votes.false;
+            if (total > 0) {
+                const truePercent = Math.round((this.votes.true / total) * 100);
+                const falsePercent = Math.round((this.votes.false / total) * 100);
 
-            this.sendChatMessage(
-                `📊 Résultats: ${this.votes.true} VRAI (${truePercent}%) vs ${this.votes.false} FAUX (${falsePercent}%) sur ${total} votes !`
-            );
+                this.sendChatMessage(
+                  `📊 Résultats: ${this.votes.true} VRAI (${truePercent}%) vs ${this.votes.false} FAUX (${falsePercent}%) sur ${total} votes !`
+                );
+            }
         }
     }
 
