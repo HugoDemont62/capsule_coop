@@ -1,17 +1,17 @@
-// src/App.jsx - VERSION AVEC TWITCH INTÉGRÉ
+// src/App.jsx - VERSION AVEC HEADER SIMPLIFIÉ
 import React, { useState, useEffect } from 'react';
 import './App.css';
-import './styles/twitch.css'; // ⭐ AJOUTER L'IMPORT CSS TWITCH
+import './styles/twitch.css';
 import NewsGame from './components/NewsGame';
-import TwitchAuthHandler from './components/TwitchAuthHandler'; // ⭐ AJOUTER LE HANDLER
+import TwitchAuthHandler from './components/TwitchAuthHandler';
 import { apiManager } from './services/apiManager';
-import { twitchService } from './services/twitchService'; // ⭐ AJOUTER LE SERVICE
+import { twitchService } from './services/twitchService';
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [apiStatus, setApiStatus] = useState({});
   
-  // ⭐ ÉTATS TWITCH
+  // États Twitch
   const [twitchStatus, setTwitchStatus] = useState({
     isAuthenticated: false,
     isConnected: false,
@@ -34,12 +34,10 @@ function App() {
     };
 
     initAPIs();
-
-    // ⭐ INITIALISER TWITCH
     initTwitch();
   }, []);
 
-  // ⭐ FONCTION D'INITIALISATION TWITCH
+  // Fonction d'initialisation Twitch
   const initTwitch = () => {
     // Vérifier si on a déjà un token
     const savedToken = localStorage.getItem('twitch_access_token');
@@ -53,7 +51,7 @@ function App() {
       }));
     }
 
-    // ⭐ ÉCOUTER LES ÉVÉNEMENTS TWITCH
+    // Écouter les événements Twitch
     window.addEventListener('twitch-auth-success', (event) => {
       console.log('✅ Authentification Twitch réussie:', event.detail);
       setTwitchStatus(prev => ({
@@ -73,20 +71,18 @@ function App() {
     });
   };
 
-  // ⭐ GESTION DE L'AUTHENTIFICATION TWITCH
+  // Gestion de l'authentification Twitch
   const handleTwitchAuth = async () => {
     try {
       setTwitchStatus(prev => ({ ...prev, isConnecting: true }));
       await twitchService.authenticate();
-      
-      // L'état sera mis à jour via l'événement window
     } catch (error) {
       console.error('❌ Erreur auth Twitch:', error);
       setTwitchStatus(prev => ({ ...prev, isConnecting: false }));
     }
   };
 
-  // ⭐ CONNEXION AU CHAT
+  // Connexion au chat
   const handleTwitchConnect = async () => {
     try {
       setTwitchStatus(prev => ({ ...prev, isConnecting: true }));
@@ -97,7 +93,7 @@ function App() {
     }
   };
 
-  // ⭐ DÉCONNEXION
+  // Déconnexion
   const handleTwitchDisconnect = () => {
     twitchService.disconnect();
     localStorage.removeItem('twitch_access_token');
@@ -120,7 +116,7 @@ function App() {
             <div className="loading-screen">
               <div className="spinner"></div>
               <h2>🎮 CAPSULE NEWS 📰</h2>
-              <p>Initialisation des APIs et traduction...</p>
+              <p>Chargement des APIs...</p>
             </div>
           </div>
         </div>
@@ -129,16 +125,14 @@ function App() {
 
   return (
       <div className="app">
-        {/* ⭐ HANDLER D'AUTHENTIFICATION TWITCH */}
         <TwitchAuthHandler />
         
         <div className="container">
           <header className="header">
             <h1 className="logo">CAPSULE NEWS</h1>
-            <p className="subtitle">Quiz d'actualités insolites interactif</p>
-            <p className="description">Vraies actualités bizarres vs Fausses news délirantes • Vrai ou Faux ?</p>
+            <p className="subtitle">Quiz d'actualités insolites</p>
 
-            {/* ⭐ STATUS CONTAINER AVEC APIS ET TWITCH */}
+            {/* STATUS CONTAINER AVEC APIS ET TWITCH */}
             <div className="status-container">
               {/* Indicateur de statut des APIs */}
               <div className="api-status">
@@ -146,10 +140,10 @@ function App() {
                 <span className={`status-dot ${apiStatus.gnewsAPI ? 'online' : 'offline'}`}></span>
                 <span className={`status-dot ${apiStatus.currentsAPI ? 'online' : 'offline'}`}></span>
                 <span className={`status-dot ${apiStatus.translation ? 'online' : 'offline'}`}></span>
-                <small>Articles Complets + Traduction 🇫🇷</small>
+                <small>APIs Actualités 📡</small>
               </div>
 
-              {/* ⭐ STATUS TWITCH EN HAUT À DROITE */}
+              {/* STATUS TWITCH */}
               <div className="twitch-header-status">
                 <div className="twitch-status-mini">
                   <span className="twitch-icon">📺</span>
@@ -160,7 +154,7 @@ function App() {
                         onClick={handleTwitchAuth}
                         disabled={twitchStatus.isConnecting}
                       >
-                        {twitchStatus.isConnecting ? '⏳' : '🔐'} Se connecter à Twitch
+                        {twitchStatus.isConnecting ? '⏳' : '🔐'} Twitch
                       </button>
                     ) : !twitchStatus.isConnected ? (
                       <div className="twitch-authenticated">
@@ -170,18 +164,18 @@ function App() {
                           onClick={handleTwitchConnect}
                           disabled={twitchStatus.isConnecting}
                         >
-                          {twitchStatus.isConnecting ? '⏳' : '💬'} Rejoindre le chat
+                          {twitchStatus.isConnecting ? '⏳' : '💬'} Chat
                         </button>
                       </div>
                     ) : (
                       <div className="twitch-connected">
                         <span className="twitch-user">🎮 {twitchStatus.username}</span>
-                        <span className="twitch-status-text">Chat connecté ✅</span>
+                        <span className="twitch-status-text">Live ✅</span>
                         <button 
                           className="btn-twitch-mini disconnect" 
                           onClick={handleTwitchDisconnect}
                         >
-                          🔌 Déconnecter
+                          🔌
                         </button>
                       </div>
                     )}
