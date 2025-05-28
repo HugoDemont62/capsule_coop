@@ -1,4 +1,4 @@
-// src/services/apiManager.js - VERSION FINALE AVEC TES CLÉS
+// src/services/apiManager.js - VERSION SANS NEWS EN DUR
 import { translationService } from './translationService.js';
 
 const CONFIG = {
@@ -88,7 +88,8 @@ class APIManager {
         'strange', 'weird', 'bizarre', 'unusual', 'odd', 'mysterious',
         'viral', 'social media', 'internet', 'technology gone wrong',
         'artificial intelligence', 'robot', 'smartphone', 'app',
-        'florida', 'japan weird', 'unusual discovery', 'bizarre study'
+        'florida', 'japan weird', 'unusual discovery', 'bizarre study',
+        'funny', 'unexpected', 'surprising', 'unusual news'
       ];
 
       const randomKeyword = weirdKeywords[Math.floor(Math.random() * weirdKeywords.length)];
@@ -97,7 +98,7 @@ class APIManager {
         q: randomKeyword,
         'page-size': '20',
         'order-by': 'relevance',
-        'show-fields': 'headline,bodyText,webUrl,thumbnail,byline,standfirst', // standfirst = résumé
+        'show-fields': 'headline,bodyText,webUrl,thumbnail,byline,standfirst',
         'show-tags': 'keyword',
         'api-key': CONFIG.GUARDIAN_API_KEY
       });
@@ -155,7 +156,7 @@ class APIManager {
     } catch (error) {
       this.stats.guardianAPI.errors++;
       console.error('❌ Guardian API Error:', error.message);
-      return null;
+      throw error; // ⚠️ MAINTENANT ON THROW L'ERREUR AU LIEU DE RETOURNER NULL
     }
   }
 
@@ -228,15 +229,14 @@ class APIManager {
     } catch (error) {
       this.stats.hackerNewsAPI.errors++;
       console.error('❌ Hacker News API Error:', error.message);
-      return null;
+      throw error; // ⚠️ MAINTENANT ON THROW L'ERREUR AU LIEU DE RETOURNER NULL
     }
   }
 
   // 📡 GNews API (100 appels/jour gratuits)
   async getGNewsWeirdNews() {
     if (!CONFIG.GNEWS_API_KEY || CONFIG.GNEWS_API_KEY === 'your_gnews_api_key_here') {
-      console.log('⚠️ GNews API: Clé manquante');
-      return null;
+      throw new Error('GNews API: Clé manquante');
     }
 
     try {
@@ -246,7 +246,8 @@ class APIManager {
       const weirdQueries = [
         'weird technology', 'bizarre science', 'unusual discovery',
         'strange invention', 'viral news', 'internet phenomenon',
-        'artificial intelligence news', 'robot news', 'tech fail'
+        'artificial intelligence news', 'robot news', 'tech fail',
+        'funny news', 'surprising news', 'unexpected discovery'
       ];
 
       const randomQuery = weirdQueries[Math.floor(Math.random() * weirdQueries.length)];
@@ -307,15 +308,14 @@ class APIManager {
     } catch (error) {
       this.stats.gnewsAPI.errors++;
       console.error('❌ GNews API Error:', error.message);
-      return null;
+      throw error; // ⚠️ MAINTENANT ON THROW L'ERREUR AU LIEU DE RETOURNER NULL
     }
   }
 
   // 📊 Currents API (gratuite, bons articles complets)
   async getCurrentsNews() {
     if (!CONFIG.CURRENTS_API_KEY || CONFIG.CURRENTS_API_KEY === 'your_currents_api_key_here') {
-      console.log('⚠️ Currents API: Clé manquante');
-      return null;
+      throw new Error('Currents API: Clé manquante');
     }
 
     try {
@@ -324,7 +324,8 @@ class APIManager {
 
       const techKeywords = [
         'artificial intelligence', 'robot', 'technology', 'weird tech',
-        'internet', 'viral', 'bizarre science', 'unusual study'
+        'internet', 'viral', 'bizarre science', 'unusual study',
+        'funny discovery', 'strange invention', 'tech news'
       ];
 
       const randomKeyword = techKeywords[Math.floor(Math.random() * techKeywords.length)];
@@ -375,15 +376,14 @@ class APIManager {
     } catch (error) {
       this.stats.currentsAPI.errors++;
       console.error('❌ Currents API Error:', error.message);
-      return null;
+      throw error; // ⚠️ MAINTENANT ON THROW L'ERREUR AU LIEU DE RETOURNER NULL
     }
   }
 
   // 📰 NewsAPI comme backup (si clé fournie)
   async getNewsAPIWeirdNews() {
     if (!CONFIG.NEWS_API_KEY || CONFIG.NEWS_API_KEY === 'your_news_api_key_here') {
-      console.log('⚠️ NewsAPI: Clé manquante');
-      return null;
+      throw new Error('NewsAPI: Clé manquante');
     }
 
     try {
@@ -392,7 +392,8 @@ class APIManager {
 
       const weirdQuery = [
         'weird technology', 'bizarre incident', 'unusual story', 'viral news',
-        'artificial intelligence', 'robot malfunction', 'tech gone wrong'
+        'artificial intelligence', 'robot malfunction', 'tech gone wrong',
+        'funny discovery', 'strange science', 'unexpected news'
       ];
 
       const randomQuery = weirdQuery[Math.floor(Math.random() * weirdQuery.length)];
@@ -449,13 +450,13 @@ class APIManager {
     } catch (error) {
       this.stats.newsAPI.errors++;
       console.error('❌ NewsAPI Error:', error.message);
-      return null;
+      throw error; // ⚠️ MAINTENANT ON THROW L'ERREUR AU LIEU DE RETOURNER NULL
     }
   }
 
   // 🧪 Test de toutes les APIs
   async testAPIs() {
-    console.log('🧪 Test des APIs d\'actualités avec contenu complet...');
+    console.log('🧪 Test des APIs d\'actualités...');
 
     const results = {
       guardianAPI: false,
@@ -536,47 +537,40 @@ class APIManager {
     return results;
   }
 
-  // 🌟 Méthode principale : mélange actualités complètes
+  // 🌟 Méthode principale : récupération d'UNE actualité au hasard
   async getMixedNews() {
-    const results = [];
+    console.log('🔄 Récupération d\'actualités via APIs...');
 
-    try {
-      console.log('🔄 Récupération d\'actualités complètes...');
+    // ⚠️ STRATÉGIE: Essayer les APIs dans un ordre aléatoire jusqu'à ce qu'une fonctionne
+    const newsAPIs = [
+      { name: 'Guardian', method: () => this.getGuardianDetailedNews() },
+      { name: 'Hacker News', method: () => this.getHackerNewsStories() },
+      { name: 'GNews', method: () => this.getGNewsWeirdNews() },
+      { name: 'Currents', method: () => this.getCurrentsNews() },
+      { name: 'NewsAPI', method: () => this.getNewsAPIWeirdNews() }
+    ];
 
-      // APIs avec articles complets - essayer toutes les sources
-      const newsAPIs = [
-        () => this.getGuardianDetailedNews(),
-        () => this.getHackerNewsStories(),
-        () => this.getGNewsWeirdNews(),
-        () => this.getCurrentsNews(),
-        () => this.getNewsAPIWeirdNews(),
-        () => this.getGuardianDetailedNews() // Double Guardian pour plus de chances
-      ];
+    // Mélanger l'ordre des APIs pour varier les sources
+    const shuffledAPIs = newsAPIs.sort(() => 0.5 - Math.random());
 
-      // Exécuter en parallèle mais avec limite
-      const promises = newsAPIs.slice(0, 6).map(api =>
-          api().catch(err => {
-            console.warn('API failed:', err.message);
-            return null;
-          })
-      );
-
-      const newsResults = await Promise.allSettled(promises);
-
-      // Filtrer les résultats valides
-      const validNews = newsResults
-          .filter(result => result.status === 'fulfilled' && result.value !== null)
-          .map(result => result.value);
-
-      results.push(...validNews);
-
-      console.log(`📊 ${validNews.length} articles complets récupérés`);
-
-    } catch (error) {
-      console.error('❌ Erreur lors du mélange des actualités:', error);
+    // Essayer chaque API jusqu'à ce qu'une fonctionne
+    for (const api of shuffledAPIs) {
+      try {
+        console.log(`🔄 Tentative ${api.name}...`);
+        const result = await api.method();
+        
+        if (result) {
+          console.log(`✅ Succès avec ${api.name}`);
+          return [result]; // Retourner un tableau avec une seule actualité
+        }
+      } catch (error) {
+        console.warn(`⚠️ ${api.name} a échoué:`, error.message);
+        continue; // Passer à l'API suivante
+      }
     }
 
-    return results;
+    // Si toutes les APIs échouent
+    throw new Error('Toutes les APIs d\'actualités ont échoué');
   }
 
   // 🧹 Méthodes utilitaires pour nettoyer le contenu
@@ -651,11 +645,12 @@ class APIManager {
   }
 
   debug() {
-    console.group('🔧 Debug API Manager - Articles Complets');
+    console.group('🔧 Debug API Manager - Actualités uniquement via APIs');
     console.log('📊 Statistiques:', this.getStats());
     console.log('🗞️ APIs configurées:', 'Guardian, Hacker News, GNews, Currents, NewsAPI');
     console.log('💾 Cache:', `${this.cache.size} entrées`);
-    console.log('🎯 Focus:', 'Articles complets avec titre + contenu substantiel');
+    console.log('🎯 Stratégie:', 'Aucune news en dur, APIs uniquement');
+    console.log('⚠️ Fallback:', 'Si toutes les APIs échouent = erreur');
     console.groupEnd();
   }
 }
