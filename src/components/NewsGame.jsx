@@ -1,4 +1,4 @@
-// src/components/NewsGame.jsx - MODIFIÉ pour Twitch
+// src/components/NewsGame.jsx - VERSION SANS NEWS EN DUR
 import React, { useState, useEffect } from 'react';
 import { apiManager } from '../services/apiManager';
 import { fakeNewsData } from '../data/fakeNews';
@@ -9,92 +9,36 @@ const NewsGame = ({ apiStatus }) => {
   const [incorrectScore, setIncorrectScore] = useState(0);
   const [currentQuestion, setCurrentQuestion] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [realNews, setRealNews] = useState([]);
   const [gameResult, setGameResult] = useState(null);
   const [isAnswered, setIsAnswered] = useState(false);
-  const [usedRealNews, setUsedRealNews] = useState(new Set());
+  const [error, setError] = useState(null);
 
   // 🎮 États Twitch
   const [twitchVotes, setTwitchVotes] = useState({ trueVotes: 0, falseVotes: 0, totalVotes: 0 });
   const [currentQuestionId, setCurrentQuestionId] = useState(null);
 
   useEffect(() => {
-    loadRealNews();
+    loadFirstQuestion();
   }, []);
 
-  const loadRealNews = async () => {
+  const loadFirstQuestion = async () => {
     setIsLoading(true);
+    setError(null);
+    
     try {
-      console.log('🔄 Chargement des actualités...');
-
-      let newsData = [];
-
-      // Essayer de récupérer des actualités via les APIs
-      if (Object.values(apiStatus).some(status => status)) {
-        try {
-          newsData = await apiManager.getMixedNews();
-          console.log(`✅ ${newsData.length} actualités récupérées via APIs`);
-        } catch (error) {
-          console.warn('⚠️ Erreur APIs, utilisation du fallback');
-        }
-      }
-
-      // Ajouter les actualités de fallback si nécessaire
-      if (newsData.length < 5) {
-        newsData = [...newsData, ...getFallbackNews()];
-      }
-
-      setRealNews(newsData);
-      showNextQuestion(newsData);
-
+      await showNextQuestion();
     } catch (error) {
-      console.error('❌ Erreur lors du chargement:', error);
-      const fallback = getFallbackNews();
-      setRealNews(fallback);
-      showNextQuestion(fallback);
+      console.error('❌ Erreur lors du chargement initial:', error);
+      setError('Impossible de charger les actualités. Vérifiez votre connexion internet.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const getFallbackNews = () => [
-    {
-      title: "L'intelligence artificielle révolutionne la médecine",
-      content: "De nouveaux algorithmes permettent de diagnostiquer des maladies avec une précision de 95%, surpassant les médecins dans certains domaines.",
-      source: "https://www.nature.com/articles/ai-medicine",
-      category: "Technology",
-      publishedAt: new Date().toISOString(),
-      isReal: true
-    },
-    {
-      title: "Découverte d'eau liquide sur Mars confirmée",
-      content: "La NASA confirme la présence d'un lac souterrain sous la calotte glaciaire polaire sud de Mars, relançant l'espoir de vie extraterrestre.",
-      source: "https://www.nasa.gov/mars-water-discovery",
-      category: "Science",
-      publishedAt: new Date().toISOString(),
-      isReal: true
-    },
-    {
-      title: "Record mondial : une éolienne produit de l'électricité pendant 365 jours",
-      content: "Une éolienne offshore au Danemark a fonctionné sans interruption pendant une année complète, établissant un nouveau record de fiabilité.",
-      source: "https://www.energy.gov/wind-record",
-      category: "Environment",
-      publishedAt: new Date().toISOString(),
-      isReal: true
-    },
-    {
-      title: "Première greffe de cœur artificiel réussie",
-      content: "Un patient français a reçu avec succès le premier cœur artificiel totalement autonome, marquant une révolution en cardiologie.",
-      source: "https://www.medical-breakthrough.com",
-      category: "Health",
-      publishedAt: new Date().toISOString(),
-      isReal: true
-    }
-  ];
-
-  const showNextQuestion = (newsData = realNews) => {
+  const showNextQuestion = async () => {
     setIsAnswered(false);
     setGameResult(null);
+    setError(null);
 
     // 🎮 Générer un ID unique pour la question
     const questionId = `q_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -103,32 +47,48 @@ const NewsGame = ({ apiStatus }) => {
     // Réinitialiser les votes Twitch
     setTwitchVotes({ trueVotes: 0, falseVotes: 0, totalVotes: 0 });
 
-    // 50% de chance d'avoir une vraie news
+    // 50% de chance d'avoir une vraie news, 50% fausse news
     const isRealNews = Math.random() > 0.5;
 
-    if (isRealNews && newsData.length > 0) {
-      // Choisir une vraie news pas encore utilisée
-      const availableNews = newsData.filter(news => !usedRealNews.has(news.title));
+    if (isRealNews) {
+      // 🌐 TOUJOURS RÉCUPÉRER VIA API - PAS DE FALLBACK
+      try {
+        console.log('🔄 Récupération d\'une vraie actualité via API...');
+        
+        // Récupérer une actualité via les APIs
+        const newsData = await apiManager.getMixedNews();
+        
+        if (newsData && newsData.length > 0) {
+          // Prendre une actualité au hasard
+          const randomIndex = Math.floor(Math.random() * newsData.length);
+          const selectedNews = newsData[randomIndex];
 
-      if (availableNews.length === 0) {
-        // Réinitialiser si toutes les news ont été utilisées
-        setUsedRealNews(new Set());
+          setCurrentQuestion({
+            ...selectedNews,
+            isReal: true,
+            id: questionId
+          });
+          
+          console.log('✅ Vraie actualité récupérée:', selectedNews.title);
+        } else {
+          throw new Error('Aucune actualité récupérée');
+        }
+        
+      } catch (error) {
+        console.error('❌ Erreur récupération API:', error);
+        
+        // ⚠️ EN CAS D'ÉCHEC API : Utiliser une fausse news à la place
+        console.log('⚠️ Échec API - Utilisation d\'une fausse news à la place');
+        const randomIndex = Math.floor(Math.random() * fakeNewsData.length);
+        setCurrentQuestion({
+          ...fakeNewsData[randomIndex],
+          isReal: false,
+          source: null,
+          id: questionId
+        });
       }
-
-      const newsToUse = availableNews.length > 0 ? availableNews : newsData;
-      const randomIndex = Math.floor(Math.random() * newsToUse.length);
-      const selectedNews = newsToUse[randomIndex];
-
-      setCurrentQuestion({
-        ...selectedNews,
-        isReal: true,
-        id: questionId
-      });
-
-      setUsedRealNews(prev => new Set([...prev, selectedNews.title]));
-
     } else {
-      // Fausse news
+      // 🎭 Fausse news
       const randomIndex = Math.floor(Math.random() * fakeNewsData.length);
       setCurrentQuestion({
         ...fakeNewsData[randomIndex],
@@ -136,6 +96,8 @@ const NewsGame = ({ apiStatus }) => {
         source: null,
         id: questionId
       });
+      
+      console.log('🎭 Fausse actualité sélectionnée');
     }
   };
 
@@ -151,17 +113,21 @@ const NewsGame = ({ apiStatus }) => {
       setIncorrectScore(prev => prev + 1);
     }
 
-    // Optionnel : Plus de validation nécessaire maintenant que Google est supprimé
-    let validationResult = null;
-
     setGameResult({
-      isCorrect,
-      validation: validationResult
+      isCorrect
     });
   };
 
-  const nextQuestion = () => {
-    showNextQuestion();
+  const nextQuestion = async () => {
+    setIsLoading(true);
+    try {
+      await showNextQuestion();
+    } catch (error) {
+      console.error('❌ Erreur lors du chargement de la question suivante:', error);
+      setError('Erreur lors du chargement de la question suivante');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // 🎮 Callback pour recevoir les votes Twitch
@@ -173,12 +139,26 @@ const NewsGame = ({ apiStatus }) => {
     });
   };
 
-  if (isLoading) {
+  if (isLoading && !currentQuestion) {
     return (
         <div className="game-container">
           <div style={{ textAlign: 'center', padding: '40px' }}>
             <div className="spinner"></div>
             <p>Chargement des actualités...</p>
+          </div>
+        </div>
+    );
+  }
+
+  if (error && !currentQuestion) {
+    return (
+        <div className="game-container">
+          <div className="error">
+            <h3>❌ Erreur</h3>
+            <p>{error}</p>
+            <button className="next-btn" onClick={loadFirstQuestion}>
+              🔄 Réessayer
+            </button>
           </div>
         </div>
     );
@@ -226,7 +206,7 @@ const NewsGame = ({ apiStatus }) => {
                 )}
               </div>
 
-              {!isAnswered && (
+              {!isAnswered && !isLoading && (
                   <div className="buttons-container">
                     <button
                         className="btn btn-true"
@@ -257,7 +237,14 @@ const NewsGame = ({ apiStatus }) => {
                   </div>
               )}
 
-              {gameResult && (
+              {isLoading && isAnswered && (
+                  <div style={{ textAlign: 'center', padding: '20px' }}>
+                    <div className="spinner"></div>
+                    <p>Chargement de la prochaine question...</p>
+                  </div>
+              )}
+
+              {gameResult && !isLoading && (
                   <div className={`result ${gameResult.isCorrect ? 'correct' : 'incorrect'}`}>
                     <div style={{ fontSize: '1.5rem', marginBottom: '15px' }}>
                       {gameResult.isCorrect ? '🎯 Excellente réponse !' : '⚠️ Réponse incorrecte'}
@@ -295,11 +282,6 @@ const NewsGame = ({ apiStatus }) => {
                                   🔗 Explorer la source
                                 </a>
                             )}
-                            {gameResult.validation?.isValidated && (
-                                <div style={{ marginTop: '15px', fontSize: '0.9rem', color: '#4ade80' }}>
-                                  ✅ Validation : {gameResult.validation.rating}
-                                </div>
-                            )}
                           </>
                       ) : (
                           <div>
@@ -313,6 +295,15 @@ const NewsGame = ({ apiStatus }) => {
 
                     <button className="next-btn" onClick={nextQuestion}>
                       ➤ Actualité suivante • {correctScore + incorrectScore}/∞
+                    </button>
+                  </div>
+              )}
+
+              {error && isAnswered && (
+                  <div className="error">
+                    <p>{error}</p>
+                    <button className="next-btn" onClick={nextQuestion}>
+                      🔄 Réessayer la question suivante
                     </button>
                   </div>
               )}
