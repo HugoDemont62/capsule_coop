@@ -1,4 +1,4 @@
-// src/App.jsx - VERSION AVEC HEADER SIMPLIFIÉ
+// src/App.jsx - VERSION AVEC STATUS APIS CORRIGÉ
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import './styles/twitch.css';
@@ -116,7 +116,7 @@ function App() {
             <div className="loading-screen">
               <div className="spinner"></div>
               <h2>🎮 CAPSULE NEWS 📰</h2>
-              <p>Chargement des APIs...</p>
+              <p>Test des APIs...</p>
             </div>
           </div>
         </div>
@@ -134,13 +134,13 @@ function App() {
 
             {/* STATUS CONTAINER AVEC APIS ET TWITCH */}
             <div className="status-container">
-              {/* Indicateur de statut des APIs */}
+              {/* Indicateur de statut des APIs - CORRIGÉ */}
               <div className="api-status">
                 <span className={`status-dot ${apiStatus.guardianAPI ? 'online' : 'offline'}`}></span>
+                <span className={`status-dot ${apiStatus.hackerNewsAPI ? 'online' : 'offline'}`}></span>
                 <span className={`status-dot ${apiStatus.gnewsAPI ? 'online' : 'offline'}`}></span>
-                <span className={`status-dot ${apiStatus.currentsAPI ? 'online' : 'offline'}`}></span>
                 <span className={`status-dot ${apiStatus.translation ? 'online' : 'offline'}`}></span>
-                <small>APIs Actualités 📡</small>
+                <small>APIs News + Traduction 🌐</small>
               </div>
 
               {/* STATUS TWITCH */}
