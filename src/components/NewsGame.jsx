@@ -4,7 +4,7 @@ import { apiManager } from '../services/apiManager';
 import { fakeNewsData } from '../data/fakeNews';
 import TwitchIntegration from './TwitchIntegration';
 
-const NewsGame = ({ apiStatus }) => {
+const NewsGame = () => {
   const [correctScore, setCorrectScore] = useState(0);
   const [incorrectScore, setIncorrectScore] = useState(0);
   const [currentQuestion, setCurrentQuestion] = useState(null);
@@ -24,7 +24,7 @@ const NewsGame = ({ apiStatus }) => {
   const loadFirstQuestion = async () => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       await showNextQuestion();
     } catch (error) {
@@ -54,10 +54,10 @@ const NewsGame = ({ apiStatus }) => {
       // 🌐 TOUJOURS RÉCUPÉRER VIA API - PAS DE FALLBACK
       try {
         console.log('🔄 Récupération d\'une vraie actualité via API...');
-        
+
         // Récupérer une actualité via les APIs
         const newsData = await apiManager.getMixedNews();
-        
+
         if (newsData && newsData.length > 0) {
           // Prendre une actualité au hasard
           const randomIndex = Math.floor(Math.random() * newsData.length);
@@ -68,15 +68,15 @@ const NewsGame = ({ apiStatus }) => {
             isReal: true,
             id: questionId
           });
-          
+
           console.log('✅ Vraie actualité récupérée:', selectedNews.title);
         } else {
           throw new Error('Aucune actualité récupérée');
         }
-        
+
       } catch (error) {
         console.error('❌ Erreur récupération API:', error);
-        
+
         // ⚠️ EN CAS D'ÉCHEC API : Utiliser une fausse news à la place
         console.log('⚠️ Échec API - Utilisation d\'une fausse news à la place');
         const randomIndex = Math.floor(Math.random() * fakeNewsData.length);
@@ -96,7 +96,7 @@ const NewsGame = ({ apiStatus }) => {
         source: null,
         id: questionId
       });
-      
+
       console.log('🎭 Fausse actualité sélectionnée');
     }
   };
@@ -190,7 +190,6 @@ const NewsGame = ({ apiStatus }) => {
             <>
               <div className="news-card">
                 <div className="news-title">{currentQuestion.title}</div>
-                <div className="news-content">{currentQuestion.content}</div>
 
                 {currentQuestion.category && (
                     <div className="news-meta">
